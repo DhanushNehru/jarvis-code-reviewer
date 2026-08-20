@@ -1,0 +1,32 @@
+# Environments
+.env
+.env.*
+!.env.example
+
+# Secrets
+gcp-key.json
+*.pem
+*.key
+secrets.yml
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+build/
+.npm
+package-lock.json
+
+# MacOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

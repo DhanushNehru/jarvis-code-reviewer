@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+:root {
+  --bg-dark: #0b0c10;
+  --bg-glass: rgba(31, 40, 51, 0.65);
+  --bg-glass-hover: rgba(31, 40, 51, 0.85);
+  --border-glass: rgba(102, 252, 241, 0.2);
+  --accent-cyan: #66fcf1;
+  --accent-cyan-glow: rgba(102, 252, 241, 0.4);
+  --accent-indigo: #45a29e;
+  --text-primary: #ffffff;
+  --text-secondary: #c5c6c7;
+  
+  --status-high: #10b981;
+  --status-high-bg: rgba(16, 185, 129, 0.1);
+  --status-med: #f59e0b;
+  --status-med-bg: rgba(245, 158, 11, 0.1);
+  --status-low: #ef4444;
+  --status-low-bg: rgba(239, 68, 68, 0.1);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle at top right, rgba(102, 252, 241, 0.15), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(69, 162, 158, 0.15), transparent 40%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+/* Cyber-Glass Utilities */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-button {
+  background: var(--bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+}
+
+.glass-button:hover {
+  background: var(--accent-cyan);
+  color: var(--bg-dark);
+  box-shadow: 0 0 15px var(--accent-cyan-glow);
+  transform: translateY(-1px);
+}
+
+.glass-button-primary {
+  background: var(--accent-cyan);
+  color: var(--bg-dark);
+  border: none;
+}
+
+.glass-button-primary:hover {
+  background: #ffffff;
+  color: var(--bg-dark);
+  box-shadow: 0 0 20px var(--accent-cyan-glow);
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #ffffff, var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2); 
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent-indigo); 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan); 
+}
