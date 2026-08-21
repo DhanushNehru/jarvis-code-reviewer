@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
-import { motion } from "framer-motion";
-import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database } from "lucide-react";
 
 const LANGUAGES = ["python", "javascript", "java", "go", "cpp", "typescript"];
 
@@ -36,8 +36,8 @@ const Dashboard = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
       {/* Editor Section */}
-      <div className="glass-panel p-4 flex flex-col gap-4 h-full">
-        <div className="flex justify-between items-center">
+      <div className="glass-panel p-4 flex flex-col gap-4 h-full relative overflow-hidden">
+        <div className="flex justify-between items-center z-10">
           <select 
             className="glass-input !w-48 text-sm"
             value={language}
@@ -57,7 +57,7 @@ const Dashboard = () => {
           </button>
         </div>
         
-        <div className="flex-1 rounded-xl overflow-hidden border border-white/10">
+        <div className="flex-1 rounded-xl overflow-hidden border border-white/10 relative z-10">
           <Editor
             height="100%"
             language={language}
@@ -71,6 +71,22 @@ const Dashboard = () => {
               padding: { top: 16 }
             }}
           />
+          
+          {/* Holographic Scanner Animation */}
+          <AnimatePresence>
+            {isEvaluating && (
+              <motion.div 
+                initial={{ top: "-10%" }}
+                animate={{ top: "110%" }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="absolute left-0 right-0 h-32 pointer-events-none z-20"
+                style={{
+                  background: "linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.2) 50%, rgba(0, 240, 255, 0.8) 95%, transparent)",
+                  boxShadow: "0 10px 20px rgba(0, 240, 255, 0.3)"
+                }}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -86,7 +102,7 @@ const Dashboard = () => {
         {isEvaluating && (
           <div className="h-full flex flex-col items-center justify-center text-accent-cyan">
             <Loader2 size={48} className="animate-spin mb-4" />
-            <p className="animate-pulse">Analyzing logic & historical patterns...</p>
+            <p className="animate-pulse">Sir, I am analyzing your architecture...</p>
           </div>
         )}
 
@@ -106,10 +122,10 @@ const Dashboard = () => {
             {/* Header / Rating */}
             <div className="flex items-start justify-between border-b border-white/10 pb-6">
               <div>
-                <h2 className="text-2xl font-bold mb-2">Evaluation Report</h2>
-                <p className="text-text-secondary text-sm">{reviewResult.summary}</p>
+                <h2 className="text-2xl font-bold mb-2">J.A.R.V.I.S. Evaluation Report</h2>
+                <p className="text-text-secondary text-sm italic">"{reviewResult.summary}"</p>
               </div>
-              <div className="flex flex-col items-center bg-white/5 px-6 py-4 rounded-2xl border border-white/10">
+              <div className="flex flex-col items-center bg-white/5 px-6 py-4 rounded-2xl border border-white/10 shrink-0 ml-4">
                 <span className="text-4xl font-black tabular-nums" style={{ color: getRatingColor(reviewResult.rating) }}>
                   {reviewResult.rating}
                 </span>
@@ -117,11 +133,24 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* RAG Transparency Panel */}
+            {reviewResult.enforced_rules && (
+              <div className="bg-accent-indigo/10 border border-accent-indigo/30 p-4 rounded-lg relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-accent-indigo" />
+                <h3 className="flex items-center gap-2 text-accent-indigo font-bold mb-3">
+                  <Database size={18} /> Organizational Guidelines Enforced
+                </h3>
+                <div className="text-xs text-text-secondary whitespace-pre-wrap font-mono p-3 bg-black/40 rounded border border-white/5">
+                  {reviewResult.enforced_rules}
+                </div>
+              </div>
+            )}
+
             {/* Bugs */}
             {reviewResult.bugs?.length > 0 && (
               <div>
                 <h3 className="flex items-center gap-2 text-status-low font-semibold mb-4">
-                  <AlertTriangle size={18} /> Critical Findings
+                  <AlertTriangle size={18} /> Anomalies Detected
                 </h3>
                 <div className="space-y-3">
                   {reviewResult.bugs.map((bug, i) => (
@@ -145,7 +174,7 @@ const Dashboard = () => {
             {reviewResult.bestPractices?.length > 0 && (
               <div>
                 <h3 className="flex items-center gap-2 text-accent-indigo font-semibold mb-4">
-                  <Shield size={18} /> Architecture & Best Practices
+                  <Shield size={18} /> Architectural Insights
                 </h3>
                 <ul className="space-y-2">
                   {reviewResult.bestPractices.map((bp, i) => (
@@ -161,7 +190,7 @@ const Dashboard = () => {
             {reviewResult.optimizations?.length > 0 && (
               <div>
                 <h3 className="flex items-center gap-2 text-accent-cyan font-semibold mb-4">
-                  <Zap size={18} /> Optimization Insights
+                  <Zap size={18} /> Recommended Optimizations
                 </h3>
                 <ul className="space-y-2">
                   {reviewResult.optimizations.map((opt, i) => (

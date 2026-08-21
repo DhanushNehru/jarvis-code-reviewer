@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { getReviewHistory, getHistoryStats } from "../services/api";
 import { motion } from "framer-motion";
-import { Loader2, TrendingUp, Code, FileText } from "lucide-react";
+import { Loader2, TrendingUp, Code, FileText, Activity } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Filler,
   Legend,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Radar } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  RadialLinearScale,
   Title,
   Tooltip,
   Filler,
@@ -57,6 +59,7 @@ const History = () => {
     );
   }
 
+  // Line Chart Data
   const chartData = {
     labels: stats?.trends?.map(t => new Date(t.date).toLocaleDateString()) || [],
     datasets: [
@@ -77,6 +80,63 @@ const History = () => {
     scales: {
       y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.1)' } },
       x: { grid: { display: false } }
+    },
+    plugins: {
+      legend: { display: false }
+    }
+  };
+
+  // Radar Chart Data Calculation
+  let totalBugs = 0;
+  let totalOpts = 0;
+  let totalArch = 0;
+
+  history.forEach(r => {
+    if (r.full_review) {
+      totalBugs += r.full_review.bugs?.length || 0;
+      totalOpts += r.full_review.optimizations?.length || 0;
+      totalArch += r.full_review.bestPractices?.length || 0;
+    }
+  });
+
+  const avgRating = stats?.average_rating || 0;
+  const numReviews = Math.max(1, history.length);
+  
+  // Dynamic skill derivation
+  const securityScore = Math.max(1, Math.min(10, avgRating - (totalBugs / numReviews) + 2));
+  const performanceScore = Math.max(1, Math.min(10, 5 + (totalOpts / numReviews) * 1.5));
+  const architectureScore = Math.max(1, Math.min(10, 4 + (totalArch / numReviews) * 2));
+  const cleanCodeScore = avgRating;
+
+  const radarData = {
+    labels: ['Security', 'Performance', 'Clean Code', 'Architecture'],
+    datasets: [
+      {
+        label: 'Developer Skill Matrix',
+        data: [securityScore, performanceScore, cleanCodeScore, architectureScore],
+        backgroundColor: 'rgba(99, 102, 241, 0.2)', // Indigo
+        borderColor: '#6366f1',
+        pointBackgroundColor: '#66fcf1',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#66fcf1',
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  const radarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      r: {
+        min: 0,
+        max: 10,
+        ticks: { display: false },
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+        pointLabels: { color: '#a0aec0', font: { size: 12, family: "'JetBrains Mono', monospace" } }
+      }
     },
     plugins: {
       legend: { display: false }
@@ -114,18 +174,35 @@ const History = () => {
             <span className="font-medium">Top Language</span>
           </div>
           <span className="text-3xl font-bold uppercase">
-            {/* simple derivation from history */}
             {history.length > 0 ? history[0].language : "N/A"}
           </span>
         </div>
       </div>
 
-      {/* Chart */}
-      {stats?.trends?.length > 1 && (
-        <div className="glass-panel p-6 h-80">
-          <Line options={chartOptions} data={chartData} />
-        </div>
-      )}
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {stats?.trends?.length > 0 && (
+          <div className="glass-panel p-6 h-80 flex flex-col">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-accent-cyan mb-4 uppercase tracking-wider">
+              <TrendingUp size={16} /> Rating Trend
+            </h3>
+            <div className="flex-1">
+              <Line options={chartOptions} data={chartData} />
+            </div>
+          </div>
+        )}
+
+        {history.length > 0 && (
+          <div className="glass-panel p-6 h-80 flex flex-col">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-accent-indigo mb-4 uppercase tracking-wider">
+              <Activity size={16} /> Skill Matrix Analysis
+            </h3>
+            <div className="flex-1">
+              <Radar data={radarData} options={radarOptions} />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* History List */}
       <div className="glass-panel p-6">
@@ -151,10 +228,12 @@ const History = () => {
                       {new Date(review.timestamp).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-sm line-clamp-1 text-white">{review.summary}</p>
+                  <p className="text-sm line-clamp-1 text-white">
+                    {review.summary}
+                  </p>
                 </div>
                 
-                <div className="flex flex-col items-center bg-bg-dark px-4 py-2 rounded-lg border border-white/5 shrink-0">
+                <div className="flex flex-col items-center bg-bg-dark px-4 py-2 rounded-lg border border-white/5 shrink-0 ml-4">
                   <span className="text-xl font-bold" style={{
                     color: review.rating >= 8 ? "var(--status-high)" : review.rating >= 5 ? "var(--status-med)" : "var(--status-low)"
                   }}>
