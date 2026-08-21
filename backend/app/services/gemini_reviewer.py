@@ -15,7 +15,7 @@ vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 # Load the model
 model = GenerativeModel(
-    "gemini-1.5-flash",
+    "gemini-1.0-pro",
     safety_settings={
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -37,13 +37,19 @@ def generate_code_review(code: str, language: str) -> dict:
     final_prompt = f"{prompt}\n\n# SOURCE CODE TO REVIEW:\n```{language}\n{code}\n```"
     
     try:
-        response = model.generate_content(
-            final_prompt,
-            generation_config={"response_mime_type": "application/json"}
-        )
+        response = model.generate_content(final_prompt)
         
-        result_text = response.text
-        review_data = json.loads(result_text)
+        result_text = response.text.strip()
+        
+        # Manually strip markdown JSON blocks if the older model adds them
+        if result_text.startswith("```json"):
+            result_text = result_text[7:]
+        if result_text.startswith("```"):
+            result_text = result_text[3:]
+        if result_text.endswith("```"):
+            result_text = result_text[:-3]
+            
+        review_data = json.loads(result_text.strip())
         
         # Inject the historical rules we fetched from BigQuery into the response
         # so the frontend can render the "RAG Transparency" panel
