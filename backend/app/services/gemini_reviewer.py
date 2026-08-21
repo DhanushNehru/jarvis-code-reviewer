@@ -41,7 +41,13 @@ def generate_code_review(code: str, language: str) -> dict:
         )
         
         result_text = response.text
-        return json.loads(result_text)
+        review_data = json.loads(result_text)
+        
+        # Inject the historical rules we fetched from BigQuery into the response
+        # so the frontend can render the "RAG Transparency" panel
+        review_data["enforced_rules"] = rules 
+        
+        return review_data
     except Exception as e:
         error_msg = str(e)
         print(f"Error generating review from Gemini: {error_msg}")
