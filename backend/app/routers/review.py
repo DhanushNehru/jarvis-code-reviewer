@@ -39,5 +39,6 @@ async def submit_code_for_review(
         return review_data
         
     except Exception as e:
-        print(f"Review endpoint error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during review processing")
+        error_msg = f"Review endpoint error: {str(e)}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
