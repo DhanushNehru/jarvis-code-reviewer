@@ -4,17 +4,14 @@ import vertexai
 from vertexai.generative_models import GenerativeModel, SafetySetting, HarmCategory, HarmBlockThreshold
 from app.prompts.review_prompt import SYSTEM_PROMPT
 from app.services.bigquery_service import get_historical_rules
-
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
-# The Qwiklabs sandbox strictly forces everything to asia-south1.
-LOCATION = "asia-south1"
+# Move EVERYTHING to us-central1 which has the widest model availability.
+LOCATION = "us-central1"
 
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-# Load the explicitly versioned model. In some Qwiklabs regions, 
-# the generic aliases (like 'gemini-1.5-flash') are disabled, so we MUST 
-# specify the exact version '-001' or it throws a 404.
+# Load the explicitly versioned model.
 model = GenerativeModel(
     "gemini-1.5-flash-001",
     safety_settings={
