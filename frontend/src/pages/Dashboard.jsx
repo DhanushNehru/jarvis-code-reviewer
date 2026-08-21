@@ -4,11 +4,13 @@ import { submitCodeReview } from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database } from "lucide-react";
 
-const LANGUAGES = ["python", "javascript", "java", "go", "cpp", "typescript"];
+const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
-  const [code, setCode] = useState("# Write or paste your code here\n");
+  const [code, setCode] = useState("// Write or paste your code here\n");
   const [language, setLanguage] = useState("python");
+  const [model, setModel] = useState("gemini-2.5-flash");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
   const [error, setError] = useState(null);
@@ -18,7 +20,7 @@ const Dashboard = () => {
     setIsEvaluating(true);
     setError(null);
     try {
-      const result = await submitCodeReview(code, language);
+      const result = await submitCodeReview(code, language, model);
       setReviewResult(result);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to evaluate code. Ensure the backend is running.");
@@ -45,6 +47,15 @@ const Dashboard = () => {
           >
             {LANGUAGES.map(lang => (
               <option key={lang} value={lang} className="bg-bg-dark">{lang.toUpperCase()}</option>
+            ))}
+          </select>
+          <select 
+            className="glass-input !w-48 text-sm border-accent-cyan/50 text-accent-cyan font-semibold"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+          >
+            {MODELS.map(m => (
+              <option key={m} value={m} className="bg-bg-dark">{m}</option>
             ))}
           </select>
           <button 

@@ -17,8 +17,8 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-export const submitCodeReview = async (code, language) => {
-  const response = await api.post("/review", { code, language });
+export const submitCodeReview = async (code, language, model = "gemini-2.5-flash") => {
+  const response = await api.post("/review", { code, language, model });
   return response.data;
 };
 

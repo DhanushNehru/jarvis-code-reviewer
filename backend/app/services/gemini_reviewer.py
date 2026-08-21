@@ -5,29 +5,28 @@ from vertexai.generative_models import GenerativeModel, SafetySetting, HarmCateg
 from app.prompts.review_prompt import SYSTEM_PROMPT
 from app.services.bigquery_service import get_historical_rules
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
-# The Qwiklabs sandbox strictly forces everything to asia-south1.
-LOCATION = "asia-south1"
+# Change back to us-central1 since Qwiklabs has 2.5 models available there!
+LOCATION = "us-central1"
 
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-# Load gemini-1.0-pro because it is the only model universally whitelisted in asia-south1 for this lab.
-model = GenerativeModel(
-    "gemini-1.0-pro",
-    safety_settings={
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-    }
-)
-
-def generate_code_review(code: str, language: str) -> dict:
+def generate_code_review(code: str, language: str, model_name: str = "gemini-2.5-flash") -> dict:
     """
-    Takes source code and language, fetches historical rules, 
-    and asks Gemini to review the code.
-    Returns a parsed JSON dictionary.
+    Sends the user's code to Gemini and enforces organizational RAG rules.
     """
+    
+    # Load the requested model dynamically
+    model = GenerativeModel(
+        model_name,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        }
+    )
+    
     rules = get_historical_rules()
     
     prompt = SYSTEM_PROMPT.format(historical_rules=rules, language=language)
