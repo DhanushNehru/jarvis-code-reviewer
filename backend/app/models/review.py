@@ -4,6 +4,7 @@ from typing import List, Optional
 class ReviewRequest(BaseModel):
     code: str = Field(..., min_length=1, description="Source code to review")
     language: str = Field(..., description="Programming language (e.g., Python, JavaScript)")
+    model: str = Field("gemini-2.5-flash", description="The Gemini model to use for evaluation")
 
 class BugIssue(BaseModel):
     line: Optional[str]

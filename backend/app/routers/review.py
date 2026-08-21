@@ -24,7 +24,7 @@ async def submit_code_for_review(
         code_uri = upload_source_code(user["uid"], request.code, request.language)
         
         # Invoke the core evaluation engine
-        review_data = generate_code_review(request.code, request.language)
+        review_data = generate_code_review(request.code, request.language, request.model)
         
         # Maintain a robust, persistent session history
         save_review(
