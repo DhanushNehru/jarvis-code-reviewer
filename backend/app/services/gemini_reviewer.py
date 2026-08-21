@@ -6,14 +6,14 @@ from app.prompts.review_prompt import SYSTEM_PROMPT
 from app.services.bigquery_service import get_historical_rules
 
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
-LOCATION = "us-central1"
+LOCATION = "asia-south1"
 
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 # Load the model
 model = GenerativeModel(
-    "gemini-2.5-flash",
+    "gemini-1.5-flash",
     safety_settings={
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -43,10 +43,11 @@ def generate_code_review(code: str, language: str) -> dict:
         result_text = response.text
         return json.loads(result_text)
     except Exception as e:
-        print(f"Error generating review from Gemini: {e}")
+        error_msg = str(e)
+        print(f"Error generating review from Gemini: {error_msg}")
         return {
             "rating": 0,
-            "summary": "Failed to generate review due to an internal error.",
+            "summary": f"Failed to generate review due to an internal error: {error_msg}",
             "bugs": [],
             "bestPractices": [],
             "optimizations": []
