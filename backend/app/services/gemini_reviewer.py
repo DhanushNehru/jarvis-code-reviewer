@@ -6,16 +6,17 @@ from app.prompts.review_prompt import SYSTEM_PROMPT
 from app.services.bigquery_service import get_historical_rules
 
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
-# The Cloud Run deployment can be in asia-south1, but Vertex AI models 
-# must be called from us-central1 in this sandbox!
-LOCATION = "us-central1"
+# The Qwiklabs sandbox strictly forces everything to asia-south1.
+LOCATION = "asia-south1"
 
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-# Load the model
+# Load the explicitly versioned model. In some Qwiklabs regions, 
+# the generic aliases (like 'gemini-1.5-flash') are disabled, so we MUST 
+# specify the exact version '-001' or it throws a 404.
 model = GenerativeModel(
-    "gemini-1.0-pro",
+    "gemini-1.5-flash-001",
     safety_settings={
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -37,11 +38,14 @@ def generate_code_review(code: str, language: str) -> dict:
     final_prompt = f"{prompt}\n\n# SOURCE CODE TO REVIEW:\n```{language}\n{code}\n```"
     
     try:
-        response = model.generate_content(final_prompt)
+        response = model.generate_content(
+            final_prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
         
         result_text = response.text.strip()
         
-        # Manually strip markdown JSON blocks if the older model adds them
+        # Manually strip markdown JSON blocks just in case
         if result_text.startswith("```json"):
             result_text = result_text[7:]
         if result_text.startswith("```"):
