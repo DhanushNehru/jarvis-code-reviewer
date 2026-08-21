@@ -6,7 +6,9 @@ from app.prompts.review_prompt import SYSTEM_PROMPT
 from app.services.bigquery_service import get_historical_rules
 
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
-LOCATION = "asia-south1"
+# The Cloud Run deployment can be in asia-south1, but Vertex AI models 
+# must be called from us-central1 in this sandbox!
+LOCATION = "us-central1"
 
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
