@@ -5,15 +5,15 @@ from vertexai.generative_models import GenerativeModel, SafetySetting, HarmCateg
 from app.prompts.review_prompt import SYSTEM_PROMPT
 from app.services.bigquery_service import get_historical_rules
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
-# Move EVERYTHING to us-central1 which has the widest model availability.
-LOCATION = "us-central1"
+# The Qwiklabs sandbox strictly forces everything to asia-south1.
+LOCATION = "asia-south1"
 
 # Initialize Vertex AI
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-# Load the explicitly versioned model.
+# Load gemini-1.0-pro because it is the only model universally whitelisted in asia-south1 for this lab.
 model = GenerativeModel(
-    "gemini-1.5-flash-001",
+    "gemini-1.0-pro",
     safety_settings={
         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
