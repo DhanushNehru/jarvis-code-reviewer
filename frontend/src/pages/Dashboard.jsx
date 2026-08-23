@@ -133,8 +133,29 @@ const Dashboard = () => {
             {/* Header / Rating */}
             <div className="flex items-start justify-between border-b border-white/10 pb-6">
               <div>
-                <h2 className="text-2xl font-bold mb-2">J.A.R.V.I.S. Evaluation Report</h2>
+                <h2 className="text-2xl font-bold mb-2 flex items-center flex-wrap gap-3">
+                  J.A.R.V.I.S. Evaluation Report
+                  {reviewResult.time_complexity && (
+                    <span className="text-xs font-mono px-2 py-1 rounded bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20">
+                      Time: {reviewResult.time_complexity}
+                    </span>
+                  )}
+                  {reviewResult.space_complexity && (
+                    <span className="text-xs font-mono px-2 py-1 rounded bg-accent-indigo/10 text-accent-indigo border border-accent-indigo/20">
+                      Space: {reviewResult.space_complexity}
+                    </span>
+                  )}
+                </h2>
                 <p className="text-text-secondary text-sm italic">"{reviewResult.summary}"</p>
+                {reviewResult.fixed_code && (
+                  <button
+                    onClick={() => setCode(reviewResult.fixed_code)}
+                    className="mt-4 flex items-center gap-2 bg-gradient-to-r from-accent-cyan/20 to-accent-indigo/20 hover:from-accent-cyan/30 hover:to-accent-indigo/30 border border-accent-cyan/30 text-accent-cyan px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]"
+                  >
+                    <Zap size={16} className="text-accent-cyan" />
+                    Apply J.A.R.V.I.S. Optimizations to Editor
+                  </button>
+                )}
               </div>
               <div className="flex flex-col items-center bg-white/5 px-6 py-4 rounded-2xl border border-white/10 shrink-0 ml-4">
                 <span className="text-4xl font-black tabular-nums" style={{ color: getRatingColor(reviewResult.rating) }}>
