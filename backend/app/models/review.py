@@ -17,6 +17,9 @@ class ReviewResponse(BaseModel):
     bugs: List[BugIssue]
     bestPractices: List[str]
     optimizations: List[str]
+    time_complexity: str
+    space_complexity: str
+    fixed_code: str
 
 class ReviewHistoryItem(BaseModel):
     id: str

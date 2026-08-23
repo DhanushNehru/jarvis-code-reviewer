@@ -227,6 +227,16 @@ const History = () => {
                     <span className="text-sm text-text-secondary">
                       {new Date(review.timestamp).toLocaleString()}
                     </span>
+                    {review.full_review?.time_complexity && (
+                      <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20">
+                        {review.full_review.time_complexity}
+                      </span>
+                    )}
+                    {review.full_review?.space_complexity && (
+                      <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20">
+                        {review.full_review.space_complexity}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm line-clamp-1 text-white">
                     {review.summary}
