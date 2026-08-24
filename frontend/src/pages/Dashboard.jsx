@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
+import { useSettings } from "../context/SettingsContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database, Volume2, VolumeX } from "lucide-react";
+import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database } from "lucide-react";
 
 const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
+  const { soundEnabled } = useSettings();
   const [code, setCode] = useState(() => localStorage.getItem("jarvis_saved_code") || "// Write or paste your code here\n");
   const [language, setLanguage] = useState("python");
   const [model, setModel] = useState("gemini-2.5-flash");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
   const [error, setError] = useState(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Auto-save code to localStorage so it survives tab switches!
   useEffect(() => {
@@ -102,13 +103,6 @@ const Dashboard = () => {
       <div className="glass-panel p-4 flex flex-col gap-4 h-full relative overflow-hidden">
         <div className="flex justify-between items-center z-10 flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-text-secondary"
-              title={soundEnabled ? "Mute Sounds" : "Enable Sounds"}
-            >
-              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
             <select 
               className="glass-input !w-32 text-sm"
               value={language}

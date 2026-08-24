@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { SettingsProvider } from "./context/SettingsContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
@@ -20,7 +21,7 @@ const AppRoutes = () => {
   return (
     <>
       {currentUser && <Navbar />}
-      <div className="pt-16 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="pt-20 pb-8 px-4 sm:px-6 lg:px-8 w-full max-w-[100vw] mx-auto min-h-screen">
         <Routes>
           <Route path="/" element={currentUser ? <Navigate to="/dashboard" /> : <Landing />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -34,9 +35,11 @@ const AppRoutes = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <SettingsProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </SettingsProvider>
     </AuthProvider>
   );
 };

@@ -133,3 +133,44 @@ h1, h2, h3, h4, h5, h6 {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* Light Mode Overrides */
+body.light-mode {
+  --bg-dark: #f0f4f8;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-glass-hover: rgba(255, 255, 255, 0.9);
+  --border-glass: rgba(0, 0, 0, 0.1);
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --accent-cyan: #0984e3;
+  --accent-cyan-glow: rgba(9, 132, 227, 0.4);
+  --accent-indigo: #6c5ce7;
+  
+  background-image: radial-gradient(circle at top right, rgba(9, 132, 227, 0.1), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(108, 92, 231, 0.1), transparent 40%);
+}
+
+body.light-mode .text-white {
+  color: #1a202c !important;
+}
+
+body.light-mode .glass-input {
+  background: rgba(255, 255, 255, 0.5);
+  color: #1a202c;
+}
+
+body.light-mode .bg-bg-dark {
+  background-color: #ffffff !important;
+}
+
+body.light-mode pre, body.light-mode code {
+  color: #2d3748 !important;
+  border-color: rgba(0,0,0,0.1) !important;
+}
+
+body.light-mode .text-gradient {
+  background: linear-gradient(to right, #2d3748, var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
