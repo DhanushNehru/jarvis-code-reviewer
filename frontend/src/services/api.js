@@ -1,8 +1,9 @@
 import axios from "axios";
 import { auth } from "./firebase";
 
-// When deployed to Cloud Run, this will be the Cloud Run URL. For local dev, we proxy or point to localhost.
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+// Hardcoded for production to completely bypass Docker build argument injection issues!
+// If your backend URL is different, change it here before deploying.
+const API_BASE = "https://jarvis-backend-727998743684.us-central1.run.app/api";
 
 const api = axios.create({
   baseURL: API_BASE,
