@@ -177,7 +177,7 @@ const Dashboard = () => {
         {isEvaluating && (
           <div className="h-full flex flex-col items-center justify-center text-accent-cyan">
             <Loader2 size={48} className="animate-spin mb-4" />
-            <p className="animate-pulse">Sir, I am analyzing your architecture...</p>
+            <p className="animate-pulse">Commander, I am analyzing your architecture...</p>
           </div>
         )}
 
