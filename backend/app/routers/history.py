@@ -20,3 +20,16 @@ async def get_stats(user: dict = Depends(get_current_user)):
     """
     stats = get_user_stats(user["uid"])
     return stats
+
+from app.services.firestore_service import delete_review
+from fastapi import HTTPException, status
+
+@router.delete("/history/{review_id}")
+async def delete_history_item(review_id: str, user: dict = Depends(get_current_user)):
+    """
+    Deletes a specific past review session.
+    """
+    success = delete_review(user["uid"], review_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete review")
+    return {"status": "success"}

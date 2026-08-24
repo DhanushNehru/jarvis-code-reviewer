@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { getReviewHistory, getHistoryStats } from "../services/api";
-import { motion } from "framer-motion";
-import { Loader2, TrendingUp, Code, FileText, Activity } from "lucide-react";
+import { getReviewHistory, getHistoryStats, deleteHistoryReview } from "../services/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, TrendingUp, Code, FileText, Activity, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -32,6 +32,19 @@ const History = () => {
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to permanently delete this review history?")) {
+      try {
+        await deleteHistoryReview(id);
+        setHistory(prev => prev.filter(r => r.id !== id));
+      } catch (err) {
+        alert("Failed to delete review.");
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -217,39 +230,68 @@ const History = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 key={review.id} 
-                className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
+                className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                onClick={() => setExpandedId(expandedId === review.id ? null : review.id)}
               >
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary uppercase">
-                      {review.language}
-                    </span>
-                    <span className="text-sm text-text-secondary">
-                      {new Date(review.timestamp).toLocaleString()}
-                    </span>
-                    {review.full_review?.time_complexity && (
-                      <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20">
-                        {review.full_review.time_complexity}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary uppercase">
+                        {review.language}
                       </span>
-                    )}
-                    {review.full_review?.space_complexity && (
-                      <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20">
-                        {review.full_review.space_complexity}
+                      <span className="text-sm text-text-secondary">
+                        {new Date(review.timestamp).toLocaleString()}
                       </span>
-                    )}
+                      {review.full_review?.time_complexity && (
+                        <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20">
+                          {review.full_review.time_complexity}
+                        </span>
+                      )}
+                      {review.full_review?.space_complexity && (
+                        <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20">
+                          {review.full_review.space_complexity}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm text-white ${expandedId === review.id ? '' : 'line-clamp-1'}`}>
+                      {review.summary}
+                    </p>
                   </div>
-                  <p className="text-sm line-clamp-1 text-white">
-                    {review.summary}
-                  </p>
+                  
+                  <div className="flex items-center gap-4 ml-4">
+                    <button 
+                      onClick={(e) => handleDelete(review.id, e)}
+                      className="p-2 text-status-low hover:bg-status-low/20 rounded-lg transition-colors"
+                      title="Delete Review"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <div className="flex flex-col items-center bg-bg-dark px-4 py-2 rounded-lg border border-white/5">
+                      <span className="text-xl font-bold" style={{
+                        color: review.rating >= 8 ? "var(--status-high)" : review.rating >= 5 ? "var(--status-med)" : "var(--status-low)"
+                      }}>
+                        {review.rating}
+                      </span>
+                    </div>
+                    {expandedId === review.id ? <ChevronUp size={20} className="text-text-secondary" /> : <ChevronDown size={20} className="text-text-secondary" />}
+                  </div>
                 </div>
-                
-                <div className="flex flex-col items-center bg-bg-dark px-4 py-2 rounded-lg border border-white/5 shrink-0 ml-4">
-                  <span className="text-xl font-bold" style={{
-                    color: review.rating >= 8 ? "var(--status-high)" : review.rating >= 5 ? "var(--status-med)" : "var(--status-low)"
-                  }}>
-                    {review.rating}
-                  </span>
-                </div>
+
+                <AnimatePresence>
+                  {expandedId === review.id && review.full_review?.original_code && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-4 pt-4 border-t border-white/10"
+                    >
+                      <p className="text-xs text-text-secondary font-bold uppercase mb-2">Original Code Snippet</p>
+                      <pre className="p-4 bg-bg-dark rounded-lg overflow-x-auto text-xs font-mono text-gray-300 border border-white/5">
+                        <code>{review.full_review.original_code}</code>
+                      </pre>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))
           )}

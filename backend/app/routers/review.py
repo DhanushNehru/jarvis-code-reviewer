@@ -33,7 +33,8 @@ async def submit_code_for_review(
             rating=review_data.get("rating", 0),
             summary=review_data.get("summary", ""),
             code_url=code_uri,
-            full_review=review_data
+            full_review=review_data,
+            original_code=request.code
         )
         
         return review_data

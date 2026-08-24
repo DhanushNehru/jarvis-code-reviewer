@@ -7,6 +7,7 @@ class ReviewRequest(BaseModel):
     model: str = Field("gemini-2.5-flash", description="The Gemini model to use for evaluation")
 
 class BugIssue(BaseModel):
+    category: str
     line: Optional[str]
     issue: str
     fix: str

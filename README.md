@@ -1,6 +1,6 @@
 # Jarvis Code Reviewer
 
-An automated, always-on intelligent code reviewer built for the next generation of engineers, submitted for the AIM Code Kitchen Season 01 presented by Google Cloud.
+An automated, always-on intelligent code reviewer built for the next generation of engineers.
 
 ## Features
 - **Multi-language Reviews:** Powered by Vertex AI Gemini, evaluates Python, JavaScript, Java, Go, and more.

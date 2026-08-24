@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database } from "lucide-react";
+import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database, Volume2, VolumeX } from "lucide-react";
 
 const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
@@ -14,14 +14,49 @@ const Dashboard = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
   const [error, setError] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // High-tech sci-fi synthetic sounds using Web Audio API (No MP3s needed!)
+  const playSound = (type) => {
+    if (!soundEnabled) return;
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (type === 'start') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } else if (type === 'success') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      }
+    } catch(e) { console.warn("Audio not supported"); }
+  };
 
   const handleSubmit = async () => {
     if (!code.trim()) return;
     setIsEvaluating(true);
     setError(null);
+    playSound('start');
     try {
       const result = await submitCodeReview(code, language, model);
       setReviewResult(result);
+      playSound('success');
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to evaluate code. Ensure the backend is running.");
     } finally {
@@ -39,16 +74,25 @@ const Dashboard = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
       {/* Editor Section */}
       <div className="glass-panel p-4 flex flex-col gap-4 h-full relative overflow-hidden">
-        <div className="flex justify-between items-center z-10">
-          <select 
-            className="glass-input !w-48 text-sm"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            {LANGUAGES.map(lang => (
-              <option key={lang} value={lang} className="bg-bg-dark">{lang.toUpperCase()}</option>
-            ))}
-          </select>
+        <div className="flex justify-between items-center z-10 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-text-secondary"
+              title={soundEnabled ? "Mute Sounds" : "Enable Sounds"}
+            >
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+            <select 
+              className="glass-input !w-32 text-sm"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              {LANGUAGES.map(lang => (
+                <option key={lang} value={lang} className="bg-bg-dark">{lang.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
           <select 
             className="glass-input !w-48 text-sm border-accent-cyan/50 text-accent-cyan font-semibold"
             value={model}
@@ -186,13 +230,21 @@ const Dashboard = () => {
                 </h3>
                 <div className="space-y-3">
                   {reviewResult.bugs.map((bug, i) => (
-                    <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-lg">
+                    <div key={i} className={`bg-white/5 border border-white/10 p-4 rounded-lg ${bug.category === 'Blocker' ? 'border-status-low/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : ''}`}>
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary">
-                          Line {bug.line || "?"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-mono text-xs px-2 py-1 rounded text-white ${
+                            bug.category === 'Blocker' ? 'bg-status-low' : 
+                            bug.category === 'Suggestion' ? 'bg-status-med' : 'bg-accent-indigo'
+                          }`}>
+                            {bug.category || "Issue"}
+                          </span>
+                          <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary">
+                            Line {bug.line || "?"}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-sm mb-2">{bug.issue}</p>
+                      <p className="text-sm mb-2 font-medium">{bug.issue}</p>
                       <p className="text-sm text-status-high flex items-center gap-2">
                         <CheckCircle size={14} /> Fix: {bug.fix}
                       </p>

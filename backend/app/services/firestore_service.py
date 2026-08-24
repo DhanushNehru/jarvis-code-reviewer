@@ -6,7 +6,7 @@ import uuid
 PROJECT_ID = os.getenv("PROJECT_ID", "qwiklabs-gcp-00-1dd11e38fdb3")
 db = firestore.Client(project=PROJECT_ID)
 
-def save_review(user_id: str, language: str, rating: int, summary: str, code_url: str, full_review: dict):
+def save_review(user_id: str, language: str, rating: int, summary: str, code_url: str, full_review: dict, original_code: str = ""):
     """
     Saves a review session to Firestore for tracking developer growth over time.
     """
@@ -21,6 +21,7 @@ def save_review(user_id: str, language: str, rating: int, summary: str, code_url
             "rating": rating,
             "summary": summary,
             "code_url": code_url,
+            "original_code": original_code,
             "full_review": full_review
         }
         
@@ -36,6 +37,7 @@ def save_review(user_id: str, language: str, rating: int, summary: str, code_url
             "rating": rating,
             "summary": summary,
             "code_url": code_url,
+            "original_code": original_code,
             "full_review": full_review
         }
 
@@ -79,3 +81,15 @@ def get_user_stats(user_id: str):
     except Exception as e:
         print(f"Firestore get stats error (ignoring): {e}")
         return {"total_reviews": 0, "average_rating": 0, "trends": []}
+
+def delete_review(user_id: str, review_id: str):
+    """
+    Deletes a specific review from the user's history.
+    """
+    try:
+        doc_ref = db.collection("users").document(user_id).collection("reviews").document(review_id)
+        doc_ref.delete()
+        return True
+    except Exception as e:
+        print(f"Firestore delete error: {e}")
+        return False

@@ -32,3 +32,8 @@ export const getHistoryStats = async () => {
   const response = await api.get("/history/stats");
   return response.data;
 };
+
+export const deleteHistoryReview = async (reviewId) => {
+  const response = await api.delete(`/history/${reviewId}`);
+  return response.data;
+};
