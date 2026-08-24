@@ -53,6 +53,25 @@ const Dashboard = () => {
     } catch(e) { console.warn("Audio not supported"); }
   };
 
+  const speakJarvis = (text) => {
+    if (!soundEnabled || !window.speechSynthesis) return;
+    
+    // Stop any currently playing audio
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    // Try to find a British Male voice for Jarvis if available
+    const voices = window.speechSynthesis.getVoices();
+    const jarvisVoice = voices.find(v => v.name.includes("UK English Male") || (v.lang === "en-GB" && v.name.includes("Male")));
+    if (jarvisVoice) {
+      utterance.voice = jarvisVoice;
+    }
+    
+    utterance.pitch = 0.9; // Slightly lower pitch
+    utterance.rate = 1.0;  // Normal speed
+    window.speechSynthesis.speak(utterance);
+  };
+
   const handleSubmit = async () => {
     if (!code.trim()) return;
     setIsEvaluating(true);
@@ -62,6 +81,8 @@ const Dashboard = () => {
       const result = await submitCodeReview(code, language, model);
       setReviewResult(result);
       playSound('success');
+      // Have Jarvis literally read the summary aloud!
+      speakJarvis(result.summary);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to evaluate code. Ensure the backend is running.");
     } finally {

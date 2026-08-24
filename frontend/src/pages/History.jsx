@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getReviewHistory, getHistoryStats, deleteHistoryReview } from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, TrendingUp, Code, FileText, Activity, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, TrendingUp, Code, FileText, Activity, Trash2, ChevronDown, ChevronUp, AlertTriangle, Lightbulb, Zap, CheckCircle, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -32,7 +32,12 @@ const History = () => {
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
+  
+  // New States for Two-Pane, Search, and Pagination
+  const [selectedId, setSelectedId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
@@ -40,6 +45,7 @@ const History = () => {
       try {
         await deleteHistoryReview(id);
         setHistory(prev => prev.filter(r => r.id !== id));
+        if (selectedId === id) setSelectedId(null);
       } catch (err) {
         alert("Failed to delete review.");
       }
@@ -64,6 +70,24 @@ const History = () => {
     fetchData();
   }, []);
 
+  // Filter and Paginate Data
+  const filteredHistory = history.filter(review => 
+    review.summary.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    review.language.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+  const paginatedHistory = filteredHistory.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const selectedReview = history.find(r => r.id === selectedId);
+
+  // Auto-select first item if none selected and data exists
+  useEffect(() => {
+    if (filteredHistory.length > 0 && !selectedId) {
+      setSelectedId(filteredHistory[0].id);
+    }
+  }, [filteredHistory, selectedId]);
+
   if (loading) {
     return (
       <div className="h-[60vh] flex items-center justify-center text-accent-cyan">
@@ -72,38 +96,21 @@ const History = () => {
     );
   }
 
-  // Line Chart Data
+  // --- Charts Logic (Unchanged) ---
   const chartData = {
     labels: stats?.trends?.map(t => new Date(t.date).toLocaleDateString()) || [],
-    datasets: [
-      {
-        fill: true,
-        label: 'Quality Rating',
-        data: stats?.trends?.map(t => t.rating) || [],
-        borderColor: '#66fcf1',
-        backgroundColor: 'rgba(102, 252, 241, 0.1)',
-        tension: 0.4,
-      }
-    ]
+    datasets: [{
+      fill: true,
+      label: 'Quality Rating',
+      data: stats?.trends?.map(t => t.rating) || [],
+      borderColor: '#66fcf1',
+      backgroundColor: 'rgba(102, 252, 241, 0.1)',
+      tension: 0.4,
+    }]
   };
+  const chartOptions = { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.1)' } },
-      x: { grid: { display: false } }
-    },
-    plugins: {
-      legend: { display: false }
-    }
-  };
-
-  // Radar Chart Data Calculation
-  let totalBugs = 0;
-  let totalOpts = 0;
-  let totalArch = 0;
-
+  let totalBugs = 0, totalOpts = 0, totalArch = 0;
   history.forEach(r => {
     if (r.full_review) {
       totalBugs += r.full_review.bugs?.length || 0;
@@ -114,8 +121,6 @@ const History = () => {
 
   const avgRating = stats?.average_rating || 0;
   const numReviews = Math.max(1, history.length);
-  
-  // Dynamic skill derivation
   const securityScore = Math.max(1, Math.min(10, avgRating - (totalBugs / numReviews) + 2));
   const performanceScore = Math.max(1, Math.min(10, 5 + (totalOpts / numReviews) * 1.5));
   const architectureScore = Math.max(1, Math.min(10, 4 + (totalArch / numReviews) * 2));
@@ -123,38 +128,19 @@ const History = () => {
 
   const radarData = {
     labels: ['Security', 'Performance', 'Clean Code', 'Architecture'],
-    datasets: [
-      {
-        label: 'Developer Skill Matrix',
-        data: [securityScore, performanceScore, cleanCodeScore, architectureScore],
-        backgroundColor: 'rgba(99, 102, 241, 0.2)', // Indigo
-        borderColor: '#6366f1',
-        pointBackgroundColor: '#66fcf1',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: '#66fcf1',
-        borderWidth: 2,
-      },
-    ],
+    datasets: [{
+      label: 'Skill Matrix',
+      data: [securityScore, performanceScore, cleanCodeScore, architectureScore],
+      backgroundColor: 'rgba(99, 102, 241, 0.2)',
+      borderColor: '#6366f1',
+      pointBackgroundColor: '#66fcf1',
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: '#66fcf1',
+      borderWidth: 2,
+    }],
   };
-
-  const radarOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      r: {
-        min: 0,
-        max: 10,
-        ticks: { display: false },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-        pointLabels: { color: '#a0aec0', font: { size: 12, family: "'JetBrains Mono', monospace" } }
-      }
-    },
-    plugins: {
-      legend: { display: false }
-    }
-  };
+  const radarOptions = { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10, ticks: { display: false }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, angleLines: { color: 'rgba(255, 255, 255, 0.1)' }, pointLabels: { color: '#a0aec0', font: { size: 12 } } } }, plugins: { legend: { display: false } } };
 
   return (
     <div className="space-y-8">
@@ -192,117 +178,226 @@ const History = () => {
         </div>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {stats?.trends?.length > 0 && (
-          <div className="glass-panel p-6 h-80 flex flex-col">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-accent-cyan mb-4 uppercase tracking-wider">
-              <TrendingUp size={16} /> Rating Trend
-            </h3>
-            <div className="flex-1">
-              <Line options={chartOptions} data={chartData} />
-            </div>
+      {/* Two Pane Master-Detail Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[800px]">
+        
+        {/* Left Pane: List View with Search & Pagination */}
+        <div className="glass-panel p-4 flex flex-col gap-4 overflow-hidden h-full">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search history by keyword or language..." 
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              className="glass-input pl-10 w-full"
+            />
           </div>
-        )}
 
-        {history.length > 0 && (
-          <div className="glass-panel p-6 h-80 flex flex-col">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-accent-indigo mb-4 uppercase tracking-wider">
-              <Activity size={16} /> Skill Matrix Analysis
-            </h3>
-            <div className="flex-1">
-              <Radar data={radarData} options={radarOptions} />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* History List */}
-      <div className="glass-panel p-6">
-        <h3 className="text-xl font-semibold mb-6">Review History</h3>
-        <div className="space-y-4">
-          {history.length === 0 ? (
-            <p className="text-text-secondary text-center py-8">No reviews yet. Start coding!</p>
-          ) : (
-            history.map((review, i) => (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                key={review.id} 
-                className="p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
-                onClick={() => setExpandedId(expandedId === review.id ? null : review.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary uppercase">
-                        {review.language}
-                      </span>
-                      <span className="text-sm text-text-secondary">
-                        {new Date(review.timestamp).toLocaleString()}
-                      </span>
-                      {review.full_review?.time_complexity && (
-                        <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20">
-                          {review.full_review.time_complexity}
-                        </span>
-                      )}
-                      {review.full_review?.space_complexity && (
-                        <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20">
-                          {review.full_review.space_complexity}
-                        </span>
-                      )}
-                    </div>
-                    <p className={`text-sm text-white ${expandedId === review.id ? '' : 'line-clamp-1'}`}>
-                      {review.summary}
-                    </p>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            {paginatedHistory.length === 0 ? (
+              <p className="text-text-secondary text-center py-8">No results found.</p>
+            ) : (
+              paginatedHistory.map((review, i) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  key={review.id} 
+                  onClick={() => setSelectedId(review.id)}
+                  className={`p-4 border rounded-xl cursor-pointer transition-all ${
+                    selectedId === review.id 
+                      ? 'bg-white/10 border-accent-cyan/50 shadow-[0_0_15px_rgba(102,252,241,0.1)]' 
+                      : 'bg-white/5 border-white/5 hover:border-white/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary uppercase">
+                      {review.language}
+                    </span>
+                    <span className="text-xs text-text-secondary">
+                      {new Date(review.timestamp).toLocaleDateString()}
+                    </span>
                   </div>
-                  
-                  <div className="flex items-center gap-4 ml-4">
+                  <p className="text-sm text-white line-clamp-2 mb-3 leading-snug">
+                    {review.summary}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold" style={{
+                      color: review.rating >= 8 ? "var(--status-high)" : review.rating >= 5 ? "var(--status-med)" : "var(--status-low)"
+                    }}>
+                      Score: {review.rating}/10
+                    </span>
                     <button 
                       onClick={(e) => handleDelete(review.id, e)}
-                      className="p-2 text-status-low hover:bg-status-low/20 rounded-lg transition-colors"
-                      title="Delete Review"
+                      className="p-1.5 text-text-secondary hover:text-status-low hover:bg-status-low/20 rounded transition-colors"
+                      title="Delete"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
-                    <div className="flex flex-col items-center bg-bg-dark px-4 py-2 rounded-lg border border-white/5">
-                      <span className="text-xl font-bold" style={{
-                        color: review.rating >= 8 ? "var(--status-high)" : review.rating >= 5 ? "var(--status-med)" : "var(--status-low)"
-                      }}>
-                        {review.rating}
-                      </span>
-                    </div>
-                    {expandedId === review.id ? <ChevronUp size={20} className="text-text-secondary" /> : <ChevronDown size={20} className="text-text-secondary" />}
                   </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                className="p-2 rounded hover:bg-white/10 disabled:opacity-30 transition-colors"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="text-sm text-text-secondary font-mono">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                className="p-2 rounded hover:bg-white/10 disabled:opacity-30 transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Right Pane: Detailed View */}
+        <div className="lg:col-span-2 glass-panel p-6 overflow-y-auto custom-scrollbar h-full">
+          {selectedReview ? (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedReview.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex flex-col gap-6"
+              >
+                {/* Header info */}
+                <div className="flex items-center gap-3 pb-4 border-b border-white/10">
+                  <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary uppercase">
+                    {selectedReview.language}
+                  </span>
+                  <span className="text-sm text-text-secondary">
+                    Reviewed on {new Date(selectedReview.timestamp).toLocaleString()}
+                  </span>
+                  {selectedReview.full_review?.time_complexity && (
+                    <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20">
+                      {selectedReview.full_review.time_complexity}
+                    </span>
+                  )}
+                  {selectedReview.full_review?.space_complexity && (
+                    <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20">
+                      {selectedReview.full_review.space_complexity}
+                    </span>
+                  )}
                 </div>
 
-                <AnimatePresence>
-                  {expandedId === review.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-4 pt-4 border-t border-white/10"
-                    >
-                      <p className="text-xs text-text-secondary font-bold uppercase mb-2">Original Code Snippet</p>
-                      {review.full_review?.original_code ? (
-                        <pre className="p-4 bg-bg-dark rounded-lg overflow-x-auto text-xs font-mono text-gray-300 border border-white/5 shadow-inner">
-                          <code>{review.full_review.original_code}</code>
-                        </pre>
-                      ) : (
-                        <div className="p-4 bg-bg-dark rounded-lg border border-white/5 text-center text-text-secondary text-sm italic">
-                          Code snippet unavailable for this legacy review. Conduct a new review to see it!
-                        </div>
-                      )}
-                    </motion.div>
+                <p className="text-lg text-white font-medium">{selectedReview.summary}</p>
+
+                {/* Original Code */}
+                <div>
+                  <p className="text-xs text-text-secondary font-bold uppercase mb-2">Original Code Snippet</p>
+                  {selectedReview.full_review?.original_code ? (
+                    <pre className="p-4 bg-bg-dark rounded-lg overflow-x-auto text-xs font-mono text-gray-300 border border-white/5 shadow-inner">
+                      <code>{selectedReview.full_review.original_code}</code>
+                    </pre>
+                  ) : (
+                    <div className="p-4 bg-bg-dark rounded-lg border border-white/5 text-center text-text-secondary text-sm italic">
+                      Code snippet unavailable for this legacy review.
+                    </div>
                   )}
-                </AnimatePresence>
+                </div>
+
+                {/* Bugs & Issues */}
+                {selectedReview.full_review?.bugs?.length > 0 && (
+                  <div>
+                    <h3 className="flex items-center gap-2 text-status-low font-semibold mb-3">
+                      <AlertTriangle size={18} /> Found Issues & Bugs
+                    </h3>
+                    <div className="space-y-3">
+                      {selectedReview.full_review.bugs.map((bug, i) => (
+                        <div key={i} className={`bg-bg-dark border border-white/5 p-4 rounded-lg ${bug.category === 'Blocker' ? 'border-status-low/30' : ''}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`font-mono text-xs px-2 py-1 rounded text-white ${
+                              bug.category === 'Blocker' ? 'bg-status-low' : 
+                              bug.category === 'Suggestion' ? 'bg-status-med' : 'bg-accent-indigo'
+                            }`}>
+                              {bug.category || "Issue"}
+                            </span>
+                            <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary">
+                              Line {bug.line || "?"}
+                            </span>
+                          </div>
+                          <p className="text-sm mb-2 font-medium">{bug.issue}</p>
+                          <p className="text-sm text-status-high flex items-center gap-2">
+                            <CheckCircle size={14} /> Fix: {bug.fix}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Best Practices */}
+                {selectedReview.full_review?.bestPractices?.length > 0 && (
+                  <div>
+                    <h3 className="flex items-center gap-2 text-accent-indigo font-semibold mb-3">
+                      <Lightbulb size={18} /> Best Practices
+                    </h3>
+                    <ul className="space-y-2">
+                      {selectedReview.full_review.bestPractices.map((practice, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2 bg-bg-dark p-3 rounded-lg border border-white/5">
+                          <span className="text-accent-indigo mt-0.5">•</span>
+                          {practice}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Optimizations */}
+                {selectedReview.full_review?.optimizations?.length > 0 && (
+                  <div>
+                    <h3 className="flex items-center gap-2 text-accent-cyan font-semibold mb-3">
+                      <Zap size={18} /> Optimizations
+                    </h3>
+                    <ul className="space-y-2">
+                      {selectedReview.full_review.optimizations.map((opt, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2 bg-bg-dark p-3 rounded-lg border border-white/5">
+                          <span className="text-accent-cyan mt-0.5">•</span>
+                          {opt}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Fixed Code */}
+                {selectedReview.full_review?.fixed_code && (
+                  <div>
+                    <h3 className="flex items-center gap-2 text-status-high font-semibold mb-3">
+                      <CheckCircle size={18} /> J.A.R.V.I.S. Fixed Code
+                    </h3>
+                    <pre className="p-4 bg-bg-dark rounded-lg overflow-x-auto text-xs font-mono text-status-high/90 border border-status-high/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                      <code>{selectedReview.full_review.fixed_code}</code>
+                    </pre>
+                  </div>
+                )}
               </motion.div>
-            ))
+            </AnimatePresence>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-text-secondary opacity-50">
+              <FileText size={64} className="mb-4" />
+              <p>Select a review from the left pane to view details</p>
+            </div>
           )}
         </div>
       </div>
+      
     </div>
   );
 };
