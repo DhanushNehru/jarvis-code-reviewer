@@ -278,7 +278,7 @@ const History = () => {
                 </div>
 
                 <AnimatePresence>
-                  {expandedId === review.id && review.full_review?.original_code && (
+                  {expandedId === review.id && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -286,9 +286,15 @@ const History = () => {
                       className="mt-4 pt-4 border-t border-white/10"
                     >
                       <p className="text-xs text-text-secondary font-bold uppercase mb-2">Original Code Snippet</p>
-                      <pre className="p-4 bg-bg-dark rounded-lg overflow-x-auto text-xs font-mono text-gray-300 border border-white/5">
-                        <code>{review.full_review.original_code}</code>
-                      </pre>
+                      {review.full_review?.original_code ? (
+                        <pre className="p-4 bg-bg-dark rounded-lg overflow-x-auto text-xs font-mono text-gray-300 border border-white/5 shadow-inner">
+                          <code>{review.full_review.original_code}</code>
+                        </pre>
+                      ) : (
+                        <div className="p-4 bg-bg-dark rounded-lg border border-white/5 text-center text-text-secondary text-sm italic">
+                          Code snippet unavailable for this legacy review. Conduct a new review to see it!
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

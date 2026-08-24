@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,13 +8,18 @@ const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "r
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
-  const [code, setCode] = useState("// Write or paste your code here\n");
+  const [code, setCode] = useState(() => localStorage.getItem("jarvis_saved_code") || "// Write or paste your code here\n");
   const [language, setLanguage] = useState("python");
   const [model, setModel] = useState("gemini-2.5-flash");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
   const [error, setError] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Auto-save code to localStorage so it survives tab switches!
+  useEffect(() => {
+    localStorage.setItem("jarvis_saved_code", code);
+  }, [code]);
 
   // High-tech sci-fi synthetic sounds using Web Audio API (No MP3s needed!)
   const playSound = (type) => {
