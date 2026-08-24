@@ -1,15 +1,31 @@
-# Build stage
-FROM node:20-alpine as build
+# Stage 1: Build the React/Vite application
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Install dependencies
 COPY package*.json ./
 RUN npm install
+
+# Copy source code
 COPY . .
+
+# Pass the backend API URL as an environment variable during the build
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build the optimized production static files
 RUN npm run build
 
-# Production stage
+# Stage 2: Serve the static files using Nginx
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
-# Copy custom nginx config for React Router fallback
+
+# Copy our custom Nginx configuration for React Router
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+
+# Copy the built static files from the builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Cloud Run defaults to port 8080
+EXPOSE 8080
+
 CMD ["nginx", "-g", "daemon off;"]
