@@ -9,7 +9,7 @@ import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler,
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, isHistoryView = false }) => {
-  const { theme, soundEnabled } = useSettings();
+  const { theme } = useSettings();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const utteranceRef = useRef(null); // Prevent garbage collection of the utterance
@@ -141,24 +141,22 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
               <p className="text-white/80 text-lg italic border-l-2 border-accent-cyan/50 pl-4 py-2 bg-gradient-to-r from-accent-cyan/5 to-transparent pr-24">
                 "{reviewResult.summary}"
               </p>
-              {soundEnabled && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <button 
-                    onClick={handlePlayPause}
-                    className="p-2 rounded-full bg-white/5 hover:bg-accent-cyan/20 text-accent-cyan transition-colors border border-transparent hover:border-accent-cyan/30"
-                    title={isSpeaking && !isPaused ? "Pause" : "Play"}
-                  >
-                    {isSpeaking && !isPaused ? <Pause size={16} /> : <Play size={16} />}
-                  </button>
-                  <button 
-                    onClick={handleReplay}
-                    className="p-2 rounded-full bg-white/5 hover:bg-accent-cyan/20 text-accent-cyan transition-colors border border-transparent hover:border-accent-cyan/30"
-                    title="Replay Audio"
-                  >
-                    <RotateCcw size={16} />
-                  </button>
-                </div>
-              )}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button 
+                  onClick={handlePlayPause}
+                  className="p-2 rounded-full bg-white/5 hover:bg-accent-cyan/20 text-accent-cyan transition-colors border border-transparent hover:border-accent-cyan/30"
+                  title={isSpeaking && !isPaused ? "Pause" : "Play"}
+                >
+                  {isSpeaking && !isPaused ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+                <button 
+                  onClick={handleReplay}
+                  className="p-2 rounded-full bg-white/5 hover:bg-accent-cyan/20 text-accent-cyan transition-colors border border-transparent hover:border-accent-cyan/30"
+                  title="Replay Audio"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </div>
             </div>
           </div>
           
