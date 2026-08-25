@@ -1,10 +1,10 @@
 # Stage 1: Build the React/Vite application
-FROM node:22-slim AS builder
+FROM node:22 AS builder
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --no-audit --no-fund --loglevel=error
 
 # Copy source code
 COPY . .
