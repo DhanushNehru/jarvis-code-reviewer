@@ -27,7 +27,7 @@ export const submitCodeReview = async (code, language, model = "gemini-2.5-flash
 
 export const getReviewHistory = async () => {
   const response = await api.get("/history");
-  return response.data;
+  return response.data.reviews || [];
 };
 
 export const getHistoryStats = async () => {

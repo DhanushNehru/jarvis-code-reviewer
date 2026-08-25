@@ -22,9 +22,13 @@ const History = () => {
     setLoading(true);
     try {
       const data = await getReviewHistory(apiKey);
-      setHistory(data);
-      if (data.length > 0) {
-        setSelectedReview(data[0]);
+      if (Array.isArray(data)) {
+        setHistory(data);
+        if (data.length > 0) {
+          setSelectedReview(data[0]);
+        }
+      } else {
+        setHistory([]);
       }
     } catch (err) {
       console.error(err);

@@ -116,7 +116,8 @@ const Dashboard = () => {
           <button 
             onClick={handleEvaluate}
             disabled={isEvaluating}
-            className="flex items-center gap-2 bg-accent-cyan hover:bg-accent-cyan/90 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
+            className="flex items-center gap-2 bg-accent-cyan hover:bg-accent-cyan/90 px-6 py-2 rounded-lg font-extrabold transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
+            style={{ color: "#000000" }}
           >
             {isEvaluating ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
             {isEvaluating ? "Analyzing..." : "Evaluate"}
