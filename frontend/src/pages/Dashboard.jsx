@@ -3,16 +3,18 @@ import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database, Download } from "lucide-react";
+import { Play, Loader2, AlertTriangle, Lightbulb, Download, Github } from "lucide-react";
+import EvaluationReport from "../components/EvaluationReport";
 
 const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
-  const { soundEnabled, apiKey } = useSettings();
-  const [code, setCode] = useState(() => localStorage.getItem("jarvis_saved_code") || "// Write or paste your code here\n");
-  const [language, setLanguage] = useState("python");
+  const { theme, apiKey } = useSettings();
+  const [code, setCode] = useState("// Paste your code here or import from GitHub");
+  const [language, setLanguage] = useState("javascript");
   const [model, setModel] = useState("gemini-2.5-flash");
+  
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
   const [error, setError] = useState(null);
@@ -20,183 +22,139 @@ const Dashboard = () => {
   const [githubUrl, setGithubUrl] = useState("");
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
-  // Auto-save code to localStorage so it survives tab switches!
   useEffect(() => {
-    localStorage.setItem("jarvis_saved_code", code);
-  }, [code]);
+    // Initial welcome message or setup could go here
+  }, []);
 
-  // High-tech sci-fi synthetic sounds using Web Audio API (No MP3s needed!)
-  const playSound = (type) => {
-    if (!soundEnabled) return;
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      if (type === 'start') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.5);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.5);
-      } else if (type === 'success') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.5);
-      }
-    } catch(e) { console.warn("Audio not supported"); }
-  };
-
-  const speakJarvis = (text) => {
-    if (!soundEnabled || !window.speechSynthesis) return;
-    
-    // Stop any currently playing audio
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    // Try to find a British Male voice for Jarvis if available
-    const voices = window.speechSynthesis.getVoices();
-    const jarvisVoice = voices.find(v => v.name.includes("UK English Male") || (v.lang === "en-GB" && v.name.includes("Male")));
-    if (jarvisVoice) {
-      utterance.voice = jarvisVoice;
-    }
-    
-    utterance.pitch = 0.9; // Slightly lower pitch
-    utterance.rate = 1.0;  // Normal speed
-    window.speechSynthesis.speak(utterance);
+  const handleEditorChange = (value) => {
+    setCode(value);
   };
 
   const handleImportGithub = async () => {
     if (!githubUrl.trim()) return;
     setIsFetchingUrl(true);
-    setError(null);
     try {
-      let rawUrl = githubUrl.trim();
-      if (rawUrl.includes("github.com") && rawUrl.includes("/blob/")) {
-        rawUrl = rawUrl.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
+      let rawUrl = githubUrl;
+      // Convert standard GitHub URL to raw.githubusercontent
+      if (githubUrl.includes('github.com')) {
+        rawUrl = githubUrl.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
       }
+      
       const response = await fetch(rawUrl);
-      if (!response.ok) throw new Error("Failed to fetch file. Ensure it is a public raw URL or public GitHub file.");
+      if (!response.ok) throw new Error("Failed to fetch file");
+      
       const text = await response.text();
       setCode(text);
       setGithubUrl("");
       
+      // Auto-detect language
       const ext = rawUrl.split('.').pop().toLowerCase();
-      if (ext === 'js' || ext === 'jsx') setLanguage('javascript');
-      else if (ext === 'ts' || ext === 'tsx') setLanguage('typescript');
-      else if (ext === 'py') setLanguage('python');
-      else if (ext === 'java') setLanguage('java');
-      else if (ext === 'cpp' || ext === 'cc') setLanguage('cpp');
-      else if (ext === 'go') setLanguage('go');
-      else if (ext === 'rs') setLanguage('rust');
+      const extMap = {
+        'py': 'python', 'js': 'javascript', 'jsx': 'javascript',
+        'ts': 'typescript', 'tsx': 'typescript', 'java': 'java',
+        'cpp': 'cpp', 'cc': 'cpp', 'c': 'cpp', 'go': 'go', 'rs': 'rust'
+      };
+      if (extMap[ext]) setLanguage(extMap[ext]);
       
-      playSound('success');
     } catch (err) {
-      setError(err.message);
-      playSound('error');
+      setError("Could not import from GitHub. Ensure the URL is public and valid.");
+      setTimeout(() => setError(null), 3000);
     } finally {
       setIsFetchingUrl(false);
     }
   };
 
-  const handleSubmit = async () => {
-    if (!code.trim()) return;
+  const handleEvaluate = async () => {
+    if (!code || code.trim() === "") return;
+    
     setIsEvaluating(true);
     setError(null);
-    playSound('start');
+    setReviewResult(null);
+
     try {
-      const result = await submitCodeReview(code, language, model, apiKey);
+      const result = await submitCodeReview({
+        code,
+        language,
+        model
+      }, apiKey);
+      
       setReviewResult(result);
-      playSound('success');
-      // Have Jarvis literally read the summary aloud!
-      speakJarvis(result.summary);
+      
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to evaluate code. Ensure the backend is running.");
+      console.error(err);
+      setError(err.response?.data?.detail || "An error occurred during evaluation. Please check your API key.");
     } finally {
       setIsEvaluating(false);
     }
   };
 
-  const getRatingColor = (rating) => {
-    if (rating >= 8) return "var(--status-high)";
-    if (rating >= 5) return "var(--status-med)";
-    return "var(--status-low)";
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
-      {/* Editor Section */}
-      <div className="glass-panel p-4 flex flex-col gap-4 h-full relative overflow-hidden">
-        <div className="flex justify-between items-center z-10 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+    <div className="w-full max-w-[100vw] h-[85vh] flex gap-4">
+      {/* Left Pane - Editor */}
+      <div className="w-1/2 flex flex-col gap-4">
+        
+        {/* Controls Bar */}
+        <div className="glass-panel p-3 flex flex-wrap justify-between items-center gap-3">
+          <div className="flex gap-3">
             <select 
-              className="glass-input !w-32 text-sm"
-              value={language}
+              value={language} 
               onChange={(e) => setLanguage(e.target.value)}
+              className="glass-input text-sm !py-1.5"
             >
-              {LANGUAGES.map(lang => (
-                <option key={lang} value={lang} className="bg-bg-dark">{lang.toUpperCase()}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <select 
-              className="glass-input !w-48 text-sm border-accent-cyan/50 text-accent-cyan font-semibold"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-            >
-              {MODELS.map(m => (
-                <option key={m} value={m} className="bg-bg-dark">{m}</option>
-              ))}
+              {LANGUAGES.map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
             </select>
             
-            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
-              <input 
-                type="text" 
-                placeholder="Paste GitHub file URL..." 
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                className="glass-input text-xs !py-1.5 !px-2 w-48"
-                onKeyDown={(e) => e.key === 'Enter' && handleImportGithub()}
-              />
-              <button 
-                onClick={handleImportGithub}
-                disabled={isFetchingUrl || !githubUrl}
-                className="p-1.5 rounded hover:bg-white/10 text-text-secondary hover:text-white transition-colors disabled:opacity-50"
-                title="Import Code"
-              >
-                {isFetchingUrl ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              </button>
-            </div>
-
-            <button 
-              onClick={handleSubmit} 
-              disabled={isEvaluating}
-              className="glass-button flex items-center gap-2 disabled:opacity-50 ml-2"
+            <select 
+              value={model} 
+              onChange={(e) => setModel(e.target.value)}
+              className="glass-input text-sm !py-1.5"
             >
-              {isEvaluating ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-              Evaluate Code
-            </button>
+              {MODELS.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
           </div>
+
+          <button 
+            onClick={handleEvaluate}
+            disabled={isEvaluating}
+            className="flex items-center gap-2 bg-accent-cyan hover:bg-accent-cyan/90 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
+          >
+            {isEvaluating ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+            {isEvaluating ? "Analyzing..." : "Evaluate"}
+          </button>
         </div>
-        
-        <div className="flex-1 rounded-xl overflow-hidden border border-white/10 relative z-10">
+
+        {/* Enhanced GitHub Importer */}
+        <div className="glass-panel p-3 flex items-center gap-3 bg-gradient-to-r from-white/5 to-transparent border border-white/10">
+          <div className="flex-1 relative">
+            <input 
+              type="text" 
+              placeholder="Paste public GitHub file URL to instantly import code..." 
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              className="glass-input text-sm !py-2 !px-10 w-full placeholder:text-text-secondary/50 focus:border-accent-indigo/50 transition-colors"
+              onKeyDown={(e) => e.key === 'Enter' && handleImportGithub()}
+            />
+            {/* Using Download icon instead of Github icon to prevent the lucide-react export bug */}
+            <Download className="absolute left-3 top-2.5 text-text-secondary opacity-50" size={16} />
+          </div>
+          <button 
+            onClick={handleImportGithub}
+            disabled={isFetchingUrl || !githubUrl}
+            className="flex items-center gap-2 bg-white/10 hover:bg-accent-indigo/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-white/5"
+          >
+            {isFetchingUrl ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Import
+          </button>
+        </div>
+
+        {/* Editor Container */}
+        <div className="flex-1 glass-panel overflow-hidden relative">
           <Editor
             height="100%"
             language={language}
-            theme="vs-dark"
+            theme={theme === 'light' ? 'vs-light' : 'vs-dark'}
             value={code}
-            onChange={(val) => setCode(val || "")}
+            onChange={handleEditorChange}
             options={{
               minimap: { enabled: false },
               fontSize: 14,
@@ -224,146 +182,37 @@ const Dashboard = () => {
       </div>
 
       {/* Review Section */}
-      <div className="glass-panel p-6 overflow-y-auto custom-scrollbar h-full">
+      <div className="w-1/2 glass-panel p-6 overflow-y-auto custom-scrollbar">
         {!reviewResult && !error && !isEvaluating && (
           <div className="h-full flex flex-col items-center justify-center text-text-secondary">
-            <Lightbulb size={48} className="mb-4 opacity-20" />
-            <p>Submit code to receive your instant AI evaluation.</p>
+            <Lightbulb size={64} className="mb-4 opacity-20 text-accent-cyan" />
+            <p className="text-lg">Submit code to receive your instant AI evaluation.</p>
+            <p className="text-sm opacity-50 mt-2 max-w-md text-center">J.A.R.V.I.S. will analyze your snippet for bugs, architectural best practices, and performance optimizations.</p>
           </div>
         )}
 
         {isEvaluating && (
           <div className="h-full flex flex-col items-center justify-center text-accent-cyan">
-            <Loader2 size={48} className="animate-spin mb-4" />
-            <p className="animate-pulse">Commander, I am analyzing your architecture...</p>
+            <Loader2 size={64} className="animate-spin mb-6" />
+            <p className="animate-pulse text-lg font-medium tracking-wide">Commander, I am analyzing your architecture...</p>
           </div>
         )}
 
         {error && (
-          <div className="p-4 rounded-lg bg-status-low-bg border border-status-low text-status-low flex items-start gap-3">
-            <AlertTriangle size={20} className="shrink-0" />
-            <p>{error}</p>
+          <div className="p-4 rounded-lg bg-status-low/10 border border-status-low/30 text-status-low flex items-start gap-3 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+            <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+            <p className="font-medium">{error}</p>
           </div>
         )}
 
         {reviewResult && !isEvaluating && (
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-8"
-          >
-            {/* Header / Rating */}
-            <div className="flex items-start justify-between border-b border-white/10 pb-6">
-              <div>
-                <h2 className="text-2xl font-bold mb-2 flex items-center flex-wrap gap-3">
-                  J.A.R.V.I.S. Evaluation Report
-                  {reviewResult.time_complexity && (
-                    <span className="text-xs font-mono px-2 py-1 rounded bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20">
-                      Time: {reviewResult.time_complexity}
-                    </span>
-                  )}
-                  {reviewResult.space_complexity && (
-                    <span className="text-xs font-mono px-2 py-1 rounded bg-accent-indigo/10 text-accent-indigo border border-accent-indigo/20">
-                      Space: {reviewResult.space_complexity}
-                    </span>
-                  )}
-                </h2>
-                <p className="text-text-secondary text-sm italic">"{reviewResult.summary}"</p>
-                {reviewResult.fixed_code && (
-                  <button
-                    onClick={() => setCode(reviewResult.fixed_code)}
-                    className="mt-4 flex items-center gap-2 bg-gradient-to-r from-accent-cyan/20 to-accent-indigo/20 hover:from-accent-cyan/30 hover:to-accent-indigo/30 border border-accent-cyan/30 text-accent-cyan px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]"
-                  >
-                    <Zap size={16} className="text-accent-cyan" />
-                    Apply J.A.R.V.I.S. Optimizations to Editor
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-col items-center bg-white/5 px-6 py-4 rounded-2xl border border-white/10 shrink-0 ml-4">
-                <span className="text-4xl font-black tabular-nums" style={{ color: getRatingColor(reviewResult.rating) }}>
-                  {reviewResult.rating}
-                </span>
-                <span className="text-xs uppercase tracking-widest text-text-secondary mt-1">/ 10</span>
-              </div>
-            </div>
-
-            {/* RAG Transparency Panel */}
-            {reviewResult.enforced_rules && (
-              <div className="bg-accent-indigo/10 border border-accent-indigo/30 p-4 rounded-lg relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-accent-indigo" />
-                <h3 className="flex items-center gap-2 text-accent-indigo font-bold mb-3">
-                  <Database size={18} /> Organizational Guidelines Enforced
-                </h3>
-                <div className="text-xs text-text-secondary whitespace-pre-wrap font-mono p-3 bg-black/40 rounded border border-white/5">
-                  {reviewResult.enforced_rules}
-                </div>
-              </div>
-            )}
-
-            {/* Bugs */}
-            {reviewResult.bugs?.length > 0 && (
-              <div>
-                <h3 className="flex items-center gap-2 text-status-low font-semibold mb-4">
-                  <AlertTriangle size={18} /> Anomalies Detected
-                </h3>
-                <div className="space-y-3">
-                  {reviewResult.bugs.map((bug, i) => (
-                    <div key={i} className={`bg-white/5 border border-white/10 p-4 rounded-lg ${bug.category === 'Blocker' ? 'border-status-low/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : ''}`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-mono text-xs px-2 py-1 rounded text-white ${
-                            bug.category === 'Blocker' ? 'bg-status-low' : 
-                            bug.category === 'Suggestion' ? 'bg-status-med' : 'bg-accent-indigo'
-                          }`}>
-                            {bug.category || "Issue"}
-                          </span>
-                          <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded text-text-secondary">
-                            Line {bug.line || "?"}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm mb-2 font-medium">{bug.issue}</p>
-                      <p className="text-sm text-status-high flex items-center gap-2">
-                        <CheckCircle size={14} /> Fix: {bug.fix}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Best Practices */}
-            {reviewResult.bestPractices?.length > 0 && (
-              <div>
-                <h3 className="flex items-center gap-2 text-accent-indigo font-semibold mb-4">
-                  <Shield size={18} /> Architectural Insights
-                </h3>
-                <ul className="space-y-2">
-                  {reviewResult.bestPractices.map((bp, i) => (
-                    <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
-                      <span className="text-accent-indigo mt-1">•</span> {bp}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Optimizations */}
-            {reviewResult.optimizations?.length > 0 && (
-              <div>
-                <h3 className="flex items-center gap-2 text-accent-cyan font-semibold mb-4">
-                  <Zap size={18} /> Recommended Optimizations
-                </h3>
-                <ul className="space-y-2">
-                  {reviewResult.optimizations.map((opt, i) => (
-                    <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
-                      <span className="text-accent-cyan mt-1">•</span> {opt}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </motion.div>
+          <EvaluationReport 
+            reviewResult={reviewResult} 
+            originalCode={null} // Don't show original code again in Dashboard, it's already in the editor
+            language={language}
+            onApplyFix={setCode}
+            isHistoryView={false}
+          />
         )}
       </div>
     </div>

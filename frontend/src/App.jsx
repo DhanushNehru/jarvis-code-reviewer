@@ -6,6 +6,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Leaderboard from "./pages/Leaderboard";
+import Analytics from "./pages/Analytics";
 import Navbar from "./components/Navbar";
 
 const ProtectedRoute = ({ children }) => {
@@ -27,6 +28,7 @@ const AppRoutes = () => {
           <Route path="/" element={currentUser ? <Navigate to="/dashboard" /> : <Landing />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
         </Routes>
       </div>

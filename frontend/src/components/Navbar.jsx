@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
-import { LogOut, LayoutDashboard, History, Trophy, Volume2, VolumeX, Sun, Moon, Settings, X } from "lucide-react";
+import { LogOut, LayoutDashboard, History, Trophy, BarChart3, Volume2, VolumeX, Sun, Moon, Settings, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
@@ -39,6 +39,14 @@ const Navbar = () => {
                     }`}
                   >
                     <History size={16} /> History
+                  </Link>
+                  <Link
+                    to="/analytics"
+                    className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${
+                      isActive("/analytics") ? "text-accent-cyan bg-white/5" : "text-text-secondary hover:text-white"
+                    }`}
+                  >
+                    <BarChart3 size={16} /> Analytics
                   </Link>
                   <Link
                     to="/leaderboard"
