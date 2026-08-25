@@ -3,7 +3,7 @@ import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Loader2, AlertTriangle, Lightbulb, Download, Github } from "lucide-react";
+import { Play, Loader2, AlertTriangle, Lightbulb, Download } from "lucide-react";
 import EvaluationReport from "../components/EvaluationReport";
 
 const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
