@@ -26,6 +26,23 @@ def save_review(user_id: str, language: str, rating: int, summary: str, code_url
         }
         
         doc_ref.set(review_data)
+        
+        # Update user profile leaderboard stats
+        try:
+            profile_ref = db.collection("user_profiles").document(user_id)
+            profile_doc = profile_ref.get()
+            if profile_doc.exists:
+                p_data = profile_doc.to_dict()
+                total = p_data.get("total_reviews", 0) + 1
+                old_avg = p_data.get("average_rating", 0.0)
+                new_avg = round(((old_avg * (total - 1)) + rating) / total, 2)
+                profile_ref.update({
+                    "total_reviews": total,
+                    "average_rating": new_avg
+                })
+        except Exception as profile_e:
+            print(f"Failed to update profile stats: {profile_e}")
+
         return review_data
     except Exception as e:
         print(f"Firestore save error (ignoring): {e}")

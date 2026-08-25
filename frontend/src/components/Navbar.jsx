@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
-import { LogOut, LayoutDashboard, History, Volume2, VolumeX, Sun, Moon, Settings, X } from "lucide-react";
+import { LogOut, LayoutDashboard, History, Trophy, Volume2, VolumeX, Sun, Moon, Settings, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
   const { logout, currentUser } = useAuth();
-  const { soundEnabled, toggleSound, theme, toggleTheme } = useSettings();
+  const { soundEnabled, toggleSound, theme, toggleTheme, apiKey, setApiKey } = useSettings();
   const location = useLocation();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -39,6 +39,14 @@ const Navbar = () => {
                     }`}
                   >
                     <History size={16} /> History
+                  </Link>
+                  <Link
+                    to="/leaderboard"
+                    className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${
+                      isActive("/leaderboard") ? "text-accent-cyan bg-white/5" : "text-text-secondary hover:text-white"
+                    }`}
+                  >
+                    <Trophy size={16} /> Leaderboard
                   </Link>
                 </div>
               </div>
@@ -114,6 +122,18 @@ const Navbar = () => {
                   >
                     <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${theme === 'light' ? 'left-7' : 'left-1'}`} />
                   </button>
+                </div>
+
+                <div className="pt-4 border-t border-white/10">
+                  <h3 className="font-medium text-white mb-1">Bring Your Own Key (BYOK)</h3>
+                  <p className="text-sm text-text-secondary mb-3">Optional: Use your custom Gemini API key.</p>
+                  <input 
+                    type="password"
+                    placeholder="AIzaSy..."
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="glass-input w-full text-sm"
+                  />
                 </div>
               </div>
             </motion.div>

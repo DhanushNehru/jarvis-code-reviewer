@@ -18,8 +18,10 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-export const submitCodeReview = async (code, language, model = "gemini-2.5-flash") => {
-  const response = await api.post("/review", { code, language, model });
+export const submitCodeReview = async (code, language, model = "gemini-2.5-flash", apiKey = "") => {
+  const headers = {};
+  if (apiKey) headers["X-API-Key"] = apiKey;
+  const response = await api.post("/review", { code, language, model }, { headers });
   return response.data;
 };
 
@@ -37,3 +39,12 @@ export const deleteHistoryReview = async (reviewId) => {
   const response = await api.delete(`/history/${reviewId}`);
   return response.data;
 };
+
+export const getRecommendations = async (apiKey = "") => {
+  const headers = {};
+  if (apiKey) headers["X-API-Key"] = apiKey;
+  const response = await api.get("/history/recommendations", { headers });
+  return response.data.recommendations;
+};
+
+export default api;

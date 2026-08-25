@@ -13,6 +13,10 @@ export const SettingsProvider = ({ children }) => {
     return localStorage.getItem('jarvis_theme') || 'dark';
   });
 
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('jarvis_api_key') || '';
+  });
+
   useEffect(() => {
     localStorage.setItem('jarvis_sound', soundEnabled);
   }, [soundEnabled]);
@@ -26,11 +30,15 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem('jarvis_api_key', apiKey);
+  }, [apiKey]);
+
   const toggleSound = () => setSoundEnabled(!soundEnabled);
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   return (
-    <SettingsContext.Provider value={{ soundEnabled, toggleSound, theme, toggleTheme }}>
+    <SettingsContext.Provider value={{ soundEnabled, toggleSound, theme, toggleTheme, apiKey, setApiKey }}>
       {children}
     </SettingsContext.Provider>
   );

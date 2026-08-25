@@ -14,6 +14,10 @@ class BugIssue(BaseModel):
 
 class ReviewResponse(BaseModel):
     rating: int
+    security_score: int = Field(default=5, description="1-10 score for security")
+    performance_score: int = Field(default=5, description="1-10 score for performance/efficiency")
+    architecture_score: int = Field(default=5, description="1-10 score for clean code/architecture")
+    testing_score: int = Field(default=5, description="1-10 score for edge cases/testability")
     summary: str
     bugs: List[BugIssue]
     bestPractices: List[str]

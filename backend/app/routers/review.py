@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
+from typing import Optional
 from app.models.review import ReviewRequest, ReviewResponse
 from app.middleware.auth import get_current_user
 from app.services.gemini_reviewer import generate_code_review
@@ -10,7 +11,8 @@ router = APIRouter()
 @router.post("/review", response_model=ReviewResponse)
 async def submit_code_for_review(
     request: ReviewRequest, 
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
+    x_api_key: Optional[str] = Header(None)
 ):
     """
     1. Authenticates user
@@ -24,7 +26,7 @@ async def submit_code_for_review(
         code_uri = upload_source_code(user["uid"], request.code, request.language)
         
         # Invoke the core evaluation engine
-        review_data = generate_code_review(request.code, request.language, request.model)
+        review_data = generate_code_review(request.code, request.language, request.model, custom_api_key=x_api_key)
         
         # Maintain a robust, persistent session history
         save_review(

@@ -3,19 +3,22 @@ import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database } from "lucide-react";
+import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database, Github, Download } from "lucide-react";
 
 const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
-  const { soundEnabled } = useSettings();
+  const { soundEnabled, apiKey } = useSettings();
   const [code, setCode] = useState(() => localStorage.getItem("jarvis_saved_code") || "// Write or paste your code here\n");
   const [language, setLanguage] = useState("python");
   const [model, setModel] = useState("gemini-2.5-flash");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
   const [error, setError] = useState(null);
+  
+  const [githubUrl, setGithubUrl] = useState("");
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   // Auto-save code to localStorage so it survives tab switches!
   useEffect(() => {
@@ -73,13 +76,46 @@ const Dashboard = () => {
     window.speechSynthesis.speak(utterance);
   };
 
+  const handleImportGithub = async () => {
+    if (!githubUrl.trim()) return;
+    setIsFetchingUrl(true);
+    setError(null);
+    try {
+      let rawUrl = githubUrl.trim();
+      if (rawUrl.includes("github.com") && rawUrl.includes("/blob/")) {
+        rawUrl = rawUrl.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
+      }
+      const response = await fetch(rawUrl);
+      if (!response.ok) throw new Error("Failed to fetch file. Ensure it is a public raw URL or public GitHub file.");
+      const text = await response.text();
+      setCode(text);
+      setGithubUrl("");
+      
+      const ext = rawUrl.split('.').pop().toLowerCase();
+      if (ext === 'js' || ext === 'jsx') setLanguage('javascript');
+      else if (ext === 'ts' || ext === 'tsx') setLanguage('typescript');
+      else if (ext === 'py') setLanguage('python');
+      else if (ext === 'java') setLanguage('java');
+      else if (ext === 'cpp' || ext === 'cc') setLanguage('cpp');
+      else if (ext === 'go') setLanguage('go');
+      else if (ext === 'rs') setLanguage('rust');
+      
+      playSound('success');
+    } catch (err) {
+      setError(err.message);
+      playSound('error');
+    } finally {
+      setIsFetchingUrl(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!code.trim()) return;
     setIsEvaluating(true);
     setError(null);
     playSound('start');
     try {
-      const result = await submitCodeReview(code, language, model);
+      const result = await submitCodeReview(code, language, model, apiKey);
       setReviewResult(result);
       playSound('success');
       // Have Jarvis literally read the summary aloud!
@@ -113,23 +149,45 @@ const Dashboard = () => {
               ))}
             </select>
           </div>
-          <select 
-            className="glass-input !w-48 text-sm border-accent-cyan/50 text-accent-cyan font-semibold"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-          >
-            {MODELS.map(m => (
-              <option key={m} value={m} className="bg-bg-dark">{m}</option>
-            ))}
-          </select>
-          <button 
-            onClick={handleSubmit} 
-            disabled={isEvaluating}
-            className="glass-button flex items-center gap-2 disabled:opacity-50"
-          >
-            {isEvaluating ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-            Evaluate Code
-          </button>
+          <div className="flex items-center gap-2">
+            <select 
+              className="glass-input !w-48 text-sm border-accent-cyan/50 text-accent-cyan font-semibold"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            >
+              {MODELS.map(m => (
+                <option key={m} value={m} className="bg-bg-dark">{m}</option>
+              ))}
+            </select>
+            
+            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+              <input 
+                type="text" 
+                placeholder="Paste GitHub file URL..." 
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                className="glass-input text-xs !py-1.5 !px-2 w-48"
+                onKeyDown={(e) => e.key === 'Enter' && handleImportGithub()}
+              />
+              <button 
+                onClick={handleImportGithub}
+                disabled={isFetchingUrl || !githubUrl}
+                className="p-1.5 rounded hover:bg-white/10 text-text-secondary hover:text-white transition-colors disabled:opacity-50"
+                title="Import Code"
+              >
+                {isFetchingUrl ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              </button>
+            </div>
+
+            <button 
+              onClick={handleSubmit} 
+              disabled={isEvaluating}
+              className="glass-button flex items-center gap-2 disabled:opacity-50 ml-2"
+            >
+              {isEvaluating ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+              Evaluate Code
+            </button>
+          </div>
         </div>
         
         <div className="flex-1 rounded-xl overflow-hidden border border-white/10 relative z-10">

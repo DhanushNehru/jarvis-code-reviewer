@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getReviewHistory, getHistoryStats, deleteHistoryReview } from "../services/api";
+import { getReviewHistory, getHistoryStats, deleteHistoryReview, getRecommendations } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import Editor from "@monaco-editor/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,10 +31,12 @@ ChartJS.register(
 );
 
 const History = () => {
-  const { theme } = useSettings();
+  const { theme, apiKey } = useSettings();
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState("log"); // 'log', 'analytics', 'demo'
@@ -76,6 +78,23 @@ const History = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'analytics' && recommendations.length === 0 && !loadingRecs) {
+      const fetchRecs = async () => {
+        setLoadingRecs(true);
+        try {
+          const recs = await getRecommendations(apiKey);
+          setRecommendations(recs || []);
+        } catch(err) {
+          console.error("Failed to fetch recs", err);
+        } finally {
+          setLoadingRecs(false);
+        }
+      };
+      fetchRecs();
+    }
+  }, [activeTab, recommendations.length, loadingRecs, apiKey]);
+
   // Filter and Paginate Data
   const filteredHistory = history.filter(review => 
     review.summary.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -115,27 +134,30 @@ const History = () => {
   };
   const chartOptions = { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } };
 
-  let totalBugs = 0, totalOpts = 0, totalArch = 0;
+  let totalSec = 0, totalPerf = 0, totalArch = 0, totalTest = 0, scoredReviews = 0;
   history.forEach(r => {
-    if (r.full_review) {
-      totalBugs += r.full_review.bugs?.length || 0;
-      totalOpts += r.full_review.optimizations?.length || 0;
-      totalArch += r.full_review.bestPractices?.length || 0;
+    if (r.full_review?.security_score !== undefined) {
+      scoredReviews++;
+      totalSec += r.full_review.security_score;
+      totalPerf += r.full_review.performance_score;
+      totalArch += r.full_review.architecture_score;
+      totalTest += r.full_review.testing_score;
     }
   });
 
   const avgRating = stats?.average_rating || 0;
-  const numReviews = Math.max(1, history.length);
-  const securityScore = Math.max(1, Math.min(10, avgRating - (totalBugs / numReviews) + 2));
-  const performanceScore = Math.max(1, Math.min(10, 5 + (totalOpts / numReviews) * 1.5));
-  const architectureScore = Math.max(1, Math.min(10, 4 + (totalArch / numReviews) * 2));
-  const cleanCodeScore = avgRating;
+  
+  // Use actual scores if available, fallback to old math for legacy
+  const securityScore = scoredReviews > 0 ? (totalSec / scoredReviews) : Math.max(1, Math.min(10, avgRating + 1));
+  const performanceScore = scoredReviews > 0 ? (totalPerf / scoredReviews) : Math.max(1, Math.min(10, avgRating + 0.5));
+  const architectureScore = scoredReviews > 0 ? (totalArch / scoredReviews) : Math.max(1, Math.min(10, avgRating - 0.5));
+  const testingScore = scoredReviews > 0 ? (totalTest / scoredReviews) : Math.max(1, Math.min(10, avgRating - 1));
 
   const radarData = {
-    labels: ['Security', 'Performance', 'Clean Code', 'Architecture'],
+    labels: ['Security', 'Performance', 'Architecture', 'Testing & Edge Cases'],
     datasets: [{
       label: 'Skill Matrix',
-      data: [securityScore, performanceScore, cleanCodeScore, architectureScore],
+      data: [securityScore, performanceScore, architectureScore, testingScore],
       backgroundColor: 'rgba(99, 102, 241, 0.2)',
       borderColor: '#6366f1',
       pointBackgroundColor: '#66fcf1',
@@ -233,6 +255,27 @@ const History = () => {
               </div>
             )}
           </div>
+
+          {/* AI Recommendations */}
+          <div className="glass-panel p-6">
+             <h3 className="flex items-center gap-2 text-sm font-bold text-status-med mb-4 uppercase tracking-wider">
+               <Lightbulb size={16} /> AI Growth Recommendations
+             </h3>
+             {loadingRecs ? (
+               <div className="flex items-center gap-2 text-text-secondary">
+                 <Loader2 size={16} className="animate-spin" /> Analyzing your history...
+               </div>
+             ) : (
+               <ul className="space-y-3">
+                 {recommendations.map((rec, idx) => (
+                   <li key={idx} className="flex items-start gap-3 bg-white/5 p-3 rounded border border-white/10">
+                     <span className="text-status-med font-mono text-sm mt-0.5">0{idx + 1}</span>
+                     <span className="text-sm text-white/90">{rec}</span>
+                   </li>
+                 ))}
+               </ul>
+             )}
+          </div>
         </motion.div>
       )}
 
@@ -248,7 +291,7 @@ const History = () => {
             <iframe 
               width="100%" 
               height="100%" 
-              src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+              src="" 
               title="YouTube video player" 
               frameBorder="0" 
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -364,14 +407,24 @@ const History = () => {
                       Reviewed on {new Date(selectedReview.timestamp).toLocaleString()}
                     </span>
                     {selectedReview.full_review?.time_complexity && (
-                      <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20">
+                      <span className="font-mono text-xs px-2 py-1 bg-accent-cyan/10 text-accent-cyan rounded border border-accent-cyan/20" title="Time Complexity">
                         {selectedReview.full_review.time_complexity}
                       </span>
                     )}
                     {selectedReview.full_review?.space_complexity && (
-                      <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20">
+                      <span className="font-mono text-xs px-2 py-1 bg-accent-indigo/10 text-accent-indigo rounded border border-accent-indigo/20" title="Space Complexity">
                         {selectedReview.full_review.space_complexity}
                       </span>
+                    )}
+                    {selectedReview.full_review?.security_score && (
+                       <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded border border-white/20" title="Security Score">
+                         Sec: {selectedReview.full_review.security_score}/10
+                       </span>
+                    )}
+                    {selectedReview.full_review?.performance_score && (
+                       <span className="font-mono text-xs px-2 py-1 bg-white/10 rounded border border-white/20" title="Performance Score">
+                         Perf: {selectedReview.full_review.performance_score}/10
+                       </span>
                     )}
                   </div>
 

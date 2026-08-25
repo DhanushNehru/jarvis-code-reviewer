@@ -23,10 +23,12 @@ app.add_middleware(
 async def health_check():
     return {"status": "ok", "service": "Jarvis Code Reviewer"}
 
-from app.routers import review, history
+from app.routers import review, history, leaderboard, recommendations
 
 app.include_router(review.router, prefix="/api")
 app.include_router(history.router, prefix="/api")
+app.include_router(leaderboard.router, prefix="/api")
+app.include_router(recommendations.router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn
