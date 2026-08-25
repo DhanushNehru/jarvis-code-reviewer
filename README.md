@@ -2,8 +2,7 @@
 
 An intelligent, full-stack application that provides real-time, AI-driven code reviews, architectural insights, and performance optimizations. Powered by Gemini 2.5 and built with a modern React/FastAPI stack, J.A.R.V.I.S. acts as your personal AI engineering assistant.
 
-<img width="1908" height="1002" alt="Jarvis Code Reviewer" src="https://github.com/user-attachments/assets/0de20e91-8030-44f4-92d7-9637d15a9383" />
-
+![Jarvis Code Reviewer Demo](docs/Jarvis%20Code%20Reviewer%20Demo.gif)
 
 ## 🚀 Features
 
@@ -13,6 +12,9 @@ An intelligent, full-stack application that provides real-time, AI-driven code r
 - **Skill Matrix Analytics:** View granular radar charts (`Chart.js`) mapping your code quality across Security, Performance, Testing, and Architecture.
 - **Persistent Archives:** Built-in history tracking via Firebase/Firestore to monitor your engineering growth over time.
 - **Voice Synthesis:** Native Web Speech API integration allows J.A.R.V.I.S. to verbally summarize his findings with interactive playback controls.
+
+<img width="1908" height="1002" alt="Jarvis Code Reviewer" src="https://github.com/user-attachments/assets/0de20e91-8030-44f4-92d7-9637d15a9383" />
+
 
 ## 🛠 Tech Stack
 
