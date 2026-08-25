@@ -70,35 +70,32 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
 
   const handleReplay = () => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Stop current speech
+      // Must be synchronous to satisfy browser anti-autoplay policies!
+      window.speechSynthesis.cancel();
       
-      // Delay speak to allow cancel to fully flush (Chrome bug)
-      setTimeout(() => {
-        const textToSpeak = reviewResult.summary || "Evaluation complete.";
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        
-        // Save to global window object to absolutely guarantee it escapes Chrome's aggressive Garbage Collection
-        window.jarvisUtterance = utterance; 
-        
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel') || v.name.includes('Samantha') || v.name.includes('Google US English'));
-        if (preferredVoice) utterance.voice = preferredVoice;
-        
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        
-        utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
-        utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); };
-        utterance.onpause = () => setIsPaused(true);
-        utterance.onresume = () => setIsPaused(false);
-        utterance.onerror = (e) => { 
-          console.error("Speech Synthesis Error: ", e);
-          setIsSpeaking(false); 
-          setIsPaused(false); 
-        };
+      const textToSpeak = reviewResult.summary || "Evaluation complete.";
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      
+      window.jarvisUtterance = utterance; 
+      
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel') || v.name.includes('Samantha') || v.name.includes('Google US English'));
+      if (preferredVoice) utterance.voice = preferredVoice;
+      
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      
+      utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
+      utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); };
+      utterance.onpause = () => setIsPaused(true);
+      utterance.onresume = () => setIsPaused(false);
+      utterance.onerror = (e) => { 
+        console.error("Speech Synthesis Error: ", e);
+        setIsSpeaking(false); 
+        setIsPaused(false); 
+      };
 
-        window.speechSynthesis.speak(utterance);
-      }, 100);
+      window.speechSynthesis.speak(utterance);
     }
   };
 

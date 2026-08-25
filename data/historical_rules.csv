@@ -1,0 +1,11 @@
+id,type,description
+1,formatting,Avoid single-character variable names — they hurt readability
+2,performance,Cache repeated database lookups inside the request loop
+3,security,Never interpolate raw user input directly into SQL queries
+4,architecture,Decouple business logic from the routing layer for better testability
+5,maintainability,Use descriptive function names that indicate side effects
+6,testing,Ensure all public functions have corresponding unit tests
+7,performance,Use bulk inserts instead of looping single inserts when writing to the database
+8,security,Validate all incoming API payloads against a strict schema
+9,formatting,Consistently use either tabs or spaces (spaces preferred in Python/JS)
+10,architecture,Apply dependency injection to make components easier to mock
