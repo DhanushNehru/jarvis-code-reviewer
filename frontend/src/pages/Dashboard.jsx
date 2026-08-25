@@ -11,8 +11,8 @@ const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
   const { theme, apiKey } = useSettings();
-  const [code, setCode] = useState("// Paste your code here or import from GitHub");
-  const [language, setLanguage] = useState("javascript");
+  const [code, setCode] = useState(() => sessionStorage.getItem('jarvis_draft_code') || "// Paste your code here or import from GitHub");
+  const [language, setLanguage] = useState(() => sessionStorage.getItem('jarvis_draft_lang') || "javascript");
   const [model, setModel] = useState("gemini-2.5-flash");
   
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -23,8 +23,12 @@ const Dashboard = () => {
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   useEffect(() => {
-    // Initial welcome message or setup could go here
-  }, []);
+    sessionStorage.setItem('jarvis_draft_code', code);
+  }, [code]);
+
+  useEffect(() => {
+    sessionStorage.setItem('jarvis_draft_lang', language);
+  }, [language]);
 
   const handleEditorChange = (value) => {
     setCode(value);

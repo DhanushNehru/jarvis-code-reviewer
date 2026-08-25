@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Editor from "@monaco-editor/react";
-import { Zap, AlertTriangle, Lightbulb, Shield, CheckCircle, Database, ChevronRight, Activity } from "lucide-react";
+import { Zap, AlertTriangle, Lightbulb, Shield, CheckCircle, Database, ChevronRight, Activity, Volume2, Play, Pause, RotateCcw } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { Radar } from 'react-chartjs-2';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
@@ -9,7 +9,9 @@ import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler,
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, isHistoryView = false }) => {
-  const { theme } = useSettings();
+  const { theme, soundEnabled } = useSettings();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   const getRatingColor = (rating) => {
     if (rating >= 8) return "#10B981"; // emerald-500
@@ -17,7 +19,6 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
     return "#EF4444"; // red-500
   };
 
-  // Individual Radar Chart for the single code review
   const chartData = {
     labels: ['Code Quality', 'Security', 'Performance', 'Testing', 'Architecture'],
     datasets: [
@@ -56,6 +57,54 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
     maintainAspectRatio: false
   };
 
+  useEffect(() => {
+    if (soundEnabled && reviewResult?.summary) {
+      handleReplay();
+    }
+    
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [reviewResult, soundEnabled]); // Speak when new review loads or sound is toggled
+
+  const handleReplay = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop current speech
+      const utterance = new SpeechSynthesisUtterance(reviewResult.summary);
+      
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel') || v.name.includes('Samantha'));
+      if (preferredVoice) utterance.voice = preferredVoice;
+      
+      utterance.rate = 1.05;
+      utterance.pitch = 0.9;
+      
+      utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
+      utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); };
+      utterance.onpause = () => setIsPaused(true);
+      utterance.onresume = () => setIsPaused(false);
+      utterance.onerror = () => { setIsSpeaking(false); setIsPaused(false); };
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handlePlayPause = () => {
+    if ('speechSynthesis' in window) {
+      if (isSpeaking) {
+        if (isPaused) {
+          window.speechSynthesis.resume();
+        } else {
+          window.speechSynthesis.pause();
+        }
+      } else {
+        handleReplay();
+      }
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -79,9 +128,30 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
                 </span>
               )}
             </h2>
-            <p className="text-white/80 text-lg italic border-l-2 border-accent-cyan/50 pl-4 py-1 bg-gradient-to-r from-accent-cyan/5 to-transparent">
-              "{reviewResult.summary}"
-            </p>
+            
+            <div className="relative group">
+              <p className="text-white/80 text-lg italic border-l-2 border-accent-cyan/50 pl-4 py-2 bg-gradient-to-r from-accent-cyan/5 to-transparent pr-24">
+                "{reviewResult.summary}"
+              </p>
+              {soundEnabled && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button 
+                    onClick={handlePlayPause}
+                    className="p-2 rounded-full bg-white/5 hover:bg-accent-cyan/20 text-accent-cyan transition-colors border border-transparent hover:border-accent-cyan/30"
+                    title={isSpeaking && !isPaused ? "Pause" : "Play"}
+                  >
+                    {isSpeaking && !isPaused ? <Pause size={16} /> : <Play size={16} />}
+                  </button>
+                  <button 
+                    onClick={handleReplay}
+                    className="p-2 rounded-full bg-white/5 hover:bg-accent-cyan/20 text-accent-cyan transition-colors border border-transparent hover:border-accent-cyan/30"
+                    title="Replay Audio"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           
           {reviewResult.fixed_code && onApplyFix && (
@@ -146,9 +216,15 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
                     }`}>
                       {bug.category || "Issue"}
                     </span>
-                    <span className="font-mono text-xs px-3 py-1 bg-white/10 rounded border border-white/10 text-white/80">
-                      Line {bug.line || "?"}
-                    </span>
+                    {bug.line && bug.line !== "null" && bug.line !== "undefined" && bug.line !== "0" ? (
+                      <span className="font-mono text-xs px-3 py-1 bg-white/10 rounded border border-white/10 text-white/80">
+                        Line {bug.line}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xs px-3 py-1 bg-white/10 rounded border border-white/10 text-white/80">
+                        General
+                      </span>
+                    )}
                   </div>
                 </div>
                 <p className="text-sm mb-4 font-medium text-white leading-relaxed">{bug.issue}</p>
