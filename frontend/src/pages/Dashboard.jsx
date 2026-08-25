@@ -3,7 +3,7 @@ import Editor from "@monaco-editor/react";
 import { submitCodeReview } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database, Github, Download } from "lucide-react";
+import { Play, Loader2, CheckCircle, AlertTriangle, Lightbulb, Shield, Zap, Database, Download } from "lucide-react";
 
 const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
