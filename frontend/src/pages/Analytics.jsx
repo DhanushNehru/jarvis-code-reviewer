@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getHistoryStats, getRecommendations } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 import { motion } from "framer-motion";
-import { Loader2, TrendingUp, Activity, BarChart3, Target, Shield, Zap, Search } from "lucide-react";
+import { Loader2, TrendingUp, Activity, BarChart, Target, Shield, Zap, Search } from "lucide-react";
 import { Radar } from 'react-chartjs-2';
 import { Chart as ChartJS, RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js';
 
@@ -95,7 +95,7 @@ const Analytics = () => {
     <div className="w-full max-w-6xl mx-auto space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <BarChart3 className="text-accent-cyan" size={32} /> 
+          <BarChart className="text-accent-cyan" size={32} /> 
           Performance Analytics & Growth
         </h1>
         <p className="text-text-secondary">Track your overall engineering metrics and AI-driven skill progression.</p>
