@@ -30,3 +30,4 @@ package-lock.json
 # IDE
 .vscode/
 .idea/
+google-cloud-sdk/
