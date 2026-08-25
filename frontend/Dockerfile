@@ -1,10 +1,10 @@
 # Stage 1: Build the React/Vite application
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci --loglevel=error --no-audit --no-fund
 
 # Copy source code
 COPY . .
