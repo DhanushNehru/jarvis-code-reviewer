@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, Loader2, AlertTriangle, Lightbulb, Download } from "lucide-react";
 import EvaluationReport from "../components/EvaluationReport";
 
-const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"];
+const LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust", "html", "css", "json", "sql"];
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-pro"];
 
 const Dashboard = () => {
@@ -56,9 +56,14 @@ const Dashboard = () => {
       const extMap = {
         'py': 'python', 'js': 'javascript', 'jsx': 'javascript',
         'ts': 'typescript', 'tsx': 'typescript', 'java': 'java',
-        'cpp': 'cpp', 'cc': 'cpp', 'c': 'cpp', 'go': 'go', 'rs': 'rust'
+        'cpp': 'cpp', 'cc': 'cpp', 'c': 'cpp', 'go': 'go', 'rs': 'rust',
+        'html': 'html', 'css': 'css', 'json': 'json', 'sql': 'sql', 'htm': 'html',
+        'md': 'markdown', 'sh': 'shell', 'yaml': 'yaml', 'yml': 'yaml', 'xml': 'xml',
+        'rb': 'ruby', 'php': 'php', 'swift': 'swift', 'kt': 'kotlin'
       };
-      if (extMap[ext]) setLanguage(extMap[ext]);
+      
+      const detectedLang = extMap[ext] || ext; // Fallback to raw extension for anything else
+      setLanguage(detectedLang);
       
     } catch (err) {
       setError("Could not import from GitHub. Ensure the URL is public and valid.");
@@ -101,6 +106,9 @@ const Dashboard = () => {
               onChange={(e) => setLanguage(e.target.value)}
               className="glass-input text-sm !py-1.5"
             >
+              {!LANGUAGES.includes(language) && (
+                <option value={language}>{language.toUpperCase()}</option>
+              )}
               {LANGUAGES.map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}
             </select>
             

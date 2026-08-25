@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
-import { LogOut, LayoutDashboard, History, Trophy, BarChart3, Volume2, VolumeX, Sun, Moon, Settings, X } from "lucide-react";
+import { LogOut, LayoutDashboard, History, Trophy, BarChart3, Sun, Moon, Settings, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
   const { logout, currentUser } = useAuth();
-  const { soundEnabled, toggleSound, theme, toggleTheme, apiKey, setApiKey } = useSettings();
+  const { theme, toggleTheme, apiKey, setApiKey } = useSettings();
   const location = useLocation();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -60,10 +60,6 @@ const Navbar = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              
-              <button onClick={toggleSound} className="p-2 rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all" title="Toggle Sound">
-                {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-              </button>
 
               <button onClick={toggleTheme} className="p-2 rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all" title="Toggle Theme">
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -106,18 +102,6 @@ const Navbar = () => {
               </h2>
               
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium text-white">Voice & Audio</h3>
-                    <p className="text-sm text-text-secondary">Enable J.A.R.V.I.S. TTS and sound effects.</p>
-                  </div>
-                  <button 
-                    onClick={toggleSound}
-                    className={`w-12 h-6 rounded-full transition-colors relative ${soundEnabled ? 'bg-accent-cyan' : 'bg-gray-600'}`}
-                  >
-                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${soundEnabled ? 'left-7' : 'left-1'}`} />
-                  </button>
-                </div>
                 
                 <div className="flex items-center justify-between">
                   <div>
