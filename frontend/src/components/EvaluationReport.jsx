@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import Editor from "@monaco-editor/react";
 import { Zap, AlertTriangle, Lightbulb, Shield, CheckCircle, Database, ChevronRight, Activity, Volume2, Play, Pause, RotateCcw } from "lucide-react";
@@ -12,6 +12,7 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
   const { theme, soundEnabled } = useSettings();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const utteranceRef = useRef(null); // Prevent garbage collection of the utterance
 
   const getRatingColor = (rating) => {
     if (rating >= 8) return "#10B981"; // emerald-500
@@ -58,36 +59,46 @@ const EvaluationReport = ({ reviewResult, originalCode, language, onApplyFix, is
   };
 
   useEffect(() => {
-    if (soundEnabled && reviewResult?.summary) {
-      handleReplay();
-    }
-    
+    // We don't auto-play on load anymore because browsers block it without direct interaction.
+    // The user must click the play or replay button to hear the audio.
     return () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [reviewResult, soundEnabled]); // Speak when new review loads or sound is toggled
+  }, []);
 
   const handleReplay = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // Stop current speech
-      const utterance = new SpeechSynthesisUtterance(reviewResult.summary);
       
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel') || v.name.includes('Samantha'));
-      if (preferredVoice) utterance.voice = preferredVoice;
-      
-      utterance.rate = 1.05;
-      utterance.pitch = 0.9;
-      
-      utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
-      utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); };
-      utterance.onpause = () => setIsPaused(true);
-      utterance.onresume = () => setIsPaused(false);
-      utterance.onerror = () => { setIsSpeaking(false); setIsPaused(false); };
+      // Delay speak to allow cancel to fully flush (Chrome bug)
+      setTimeout(() => {
+        const textToSpeak = reviewResult.summary || "Evaluation complete.";
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        
+        // Save to global window object to absolutely guarantee it escapes Chrome's aggressive Garbage Collection
+        window.jarvisUtterance = utterance; 
+        
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel') || v.name.includes('Samantha') || v.name.includes('Google US English'));
+        if (preferredVoice) utterance.voice = preferredVoice;
+        
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        
+        utterance.onstart = () => { setIsSpeaking(true); setIsPaused(false); };
+        utterance.onend = () => { setIsSpeaking(false); setIsPaused(false); };
+        utterance.onpause = () => setIsPaused(true);
+        utterance.onresume = () => setIsPaused(false);
+        utterance.onerror = (e) => { 
+          console.error("Speech Synthesis Error: ", e);
+          setIsSpeaking(false); 
+          setIsPaused(false); 
+        };
 
-      window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(utterance);
+      }, 100);
     }
   };
 
