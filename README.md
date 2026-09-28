@@ -35,7 +35,7 @@ An intelligent, full-stack application that provides real-time, AI-driven code r
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/jarvis-code-reviewer.git
+git clone https://github.com/DhanushNehru/jarvis-code-reviewer.git
 cd jarvis-code-reviewer
 ```
 
